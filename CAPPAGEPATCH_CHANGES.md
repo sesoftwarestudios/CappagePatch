@@ -55,6 +55,56 @@ It does not claim that all possible long SMB communication stalls share that
 cause. See [SMB_STALL_INVESTIGATION.md](SMB_STALL_INVESTIGATION.md) for the
 evidence, remaining hypotheses, and large-backup acceptance gate.
 
+## A1470 validation record
+
+The September 22-23, 2026 release-candidate validation used an A1470
+(`TimeCapsule8,119`) with the patched NetBSD ARMv4 `smbd` installed. Existing
+backup data was preserved throughout the validation.
+
+- The corrected post-install Checkup passed after its legacy Bonjour probe was
+  changed to inspect the live advertiser command and ADisk metadata without
+  relying on utilities absent from the appliance firmware.
+- Direct Bonjour inspection confirmed simultaneous `_smb._tcp` on TCP 445,
+  `_afpovertcp._tcp` on TCP 548, and combined AFP+SMB Time Machine metadata.
+- Authenticated SMB listing plus create, read, rename, copy, and delete checks
+  passed.
+- A fresh full Time Machine backup from macOS 26 completed in one run after the
+  allocator correction was deployed. Subsequent macOS 26 SMB backups also
+  completed.
+- An OS X Lion Time Machine backup completed over AFP while macOS 26 continued
+  to complete SMB backups. This verifies that **Older Mac Support** did not
+  disable or downgrade the modern SMB path.
+- Lion displayed one progress change that might have represented a resume, but
+  no disconnect or backup error was observed. Lion can also recalculate its
+  progress total between phases, so this is recorded as an unconfirmed
+  interruption rather than a demonstrated failure.
+
+These results validate the candidate on the tested A1470 and mixed-version
+network. They do not claim that every possible network silence on every device
+has the same allocator cause.
+
+## Release build verification
+
+The September 23, 2026 local release candidate was packaged with full
+validation as `CappagePatch.app.zip` (128 MiB):
+
+```text
+SHA256 556af47a3fb581de833b0a26d180d650c54accf68a1e29b7680922a949a1d157
+```
+
+- 1,902 Python tests and 219 subtests passed; the 24 reported warnings are
+  Python `forkpty()` deprecation warnings in existing CLI tests.
+- 535 Swift tests passed.
+- The app executable, helper, and embedded Python runtime contain both
+  `arm64` and `x86_64` slices.
+- Native Apple-silicon and Rosetta Intel executions of the bundled Python,
+  `sshpass`, and `smbclient` components passed.
+- Full package validation found no missing architecture slices, unresolved
+  external libraries, invalid nested signatures, or invalid app signature.
+
+This local artifact is ad-hoc signed and is not notarized. A public release
+should be Developer ID signed and notarized, or clearly retain that disclosure.
+
 ## License
 
 The modified distribution remains licensed under GPL-3.0-only. See

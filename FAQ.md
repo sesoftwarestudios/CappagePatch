@@ -271,7 +271,7 @@ The `uninstall` script removes these managed files and optionally reboots the de
 
 #### Where can I get help?
 
-If you find any problems, please [file an issue here](https://github.com/jamesyc/TimeCapsuleSMB/issues). The developer is actively working on improvements.
+If you find a problem, please [file it in the CappagePatch repository](https://github.com/sesoftwarestudios/CappagePatch/issues).
 
 #### What information should I include when reporting issues?
 
@@ -323,9 +323,10 @@ Share names and Bonjour names still come from the Time Capsule itself. For most 
 
 ## Maintenance
 
-#### How do I update TimeCapsuleSMB?
+#### How do I update CappagePatch?
 
-Download a new zip file from the releases page: https://github.com/jamesyc/TimeCapsuleSMB/releases
+Download a new `CappagePatch.app.zip` from the
+[CappagePatch releases page](https://github.com/sesoftwarestudios/CappagePatch/releases).
 
 If using the macOS app, just open the app and click "Install". 
 

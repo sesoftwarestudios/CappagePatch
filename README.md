@@ -86,6 +86,9 @@ If the upstream TimeCapsuleSMB work has been useful to you, you can
 
 You will need:  
 - A macOS 14+ or Linux machine on the same local network as the Time Capsule
+  to install and manage CappagePatch. Older Macs do not run the management
+  app; after **Older Mac Support** is enabled, they use the Time Capsule's AFP
+  Time Machine destination normally.
 - External storage must currently use HFS+. FAT32 disks are not supported.
 - The password for the Time Capsule
 
@@ -101,7 +104,10 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 ## Quick Start (macOS app)
 
 1. Download `CappagePatch.app.zip` from this repository's Releases page, or build it from source as described below.
-2. Unzip the app and run it. If you get a "cannot be opened" warning, you need to manually disable Gatekeeper for this app.
+2. Unzip the app and run it. The release notes state whether a build is signed
+   and notarized. For an explicitly unnotarized development build, use
+   Finder's **Open** command and macOS's **Open Anyway** confirmation if
+   offered; do not disable Gatekeeper system-wide.
 3. Make sure *Local Network* permission is granted (System Settings → Privacy & Security → Local Network → enable CappagePatch, then quit and reopen the app).
 4. Click "Add Device" on the left sidebar, and select your device. 
 5. Enter your device password, and click "Save Device". 
@@ -117,9 +123,14 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 9. (For gen 1-4 devices only) Go to the maintenance page "Persistent NetBSD4 Boot Hook" section. Install the firmware patch to allow the device to automatically start Samba after reboots. Click "Back Up and Inspect" and "Plan Patch" to check if it can be installed; then run "Write Patch" to flash it to your device.    
    <img width="634" height="429" alt="image" src="https://github.com/user-attachments/assets/e35d8934-975b-4079-8087-8c22984a3165" />
 10. (Optional) Wait 5-10 minutes for Samba to fully start up, then go to the Checkup tab and run a Checkup.
-11. Delete the old AFP servers listed in macOS Time Machine settings. Then add the new Samba server destination. *This step will not delete your old backups from the disk.*
+11. On modern macOS, select the advertised SMB destination. Remove a stale AFP
+    destination from that Mac only if you are using the modern-only preset.
+    When **Older Mac Support** is enabled, keep AFP available for the older
+    Macs and SMB available for modern Macs. Removing a destination from a
+    Mac's settings does not delete its backup data.
 
-Please [read the FAQ](FAQ.md) for more information. If you have an issue that could not be resolved via the FAQ, I would appreciate it if you [file an issue here](https://github.com/jamesyc/TimeCapsuleSMB/issues) for help.
+Please [read the FAQ](FAQ.md) for more information. If an issue cannot be
+resolved there, [file it in the CappagePatch repository](https://github.com/sesoftwarestudios/CappagePatch/issues).
 
 ### Build the macOS app
 
@@ -157,7 +168,7 @@ If you run into any issues:
 
 Just delete this `TimeCapsuleSMB` folder if you want to remove it from your Mac after you're done setting up the Time Capsule. All the scripts/binaries/etc are stored in the `TimeCapsuleSMB` folder (so if you want to clean up your Mac, then just deleting the folder is fine).
 
-If you find any bugs, I would appreciate it if you [file an issue here](https://github.com/jamesyc/TimeCapsuleSMB/issues) for help.
+If you find a bug, [file it in the CappagePatch repository](https://github.com/sesoftwarestudios/CappagePatch/issues).
 
 ## Step 1: Prepare Your Host
 

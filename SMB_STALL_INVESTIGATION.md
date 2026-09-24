@@ -96,3 +96,18 @@ A root-cause patch must meet all of these conditions:
 
 One uninterrupted backup is useful evidence but is not sufficient to declare
 the defect fixed.
+
+## September 2026 validation result
+
+The CappagePatch candidate containing the PID-owned no-pthread talloc reset was
+deployed to the affected A1470. One fresh full macOS 26 Time Machine backup
+completed without a manual resume, and later SMB backups also completed. An OS
+X Lion backup completed over AFP while the same Time Capsule continued serving
+successful macOS 26 SMB backups.
+
+The Lion UI showed one progress change that the tester considered a possible
+resume, but it did not display a disconnect or backup error. Because Lion may
+recalculate totals between phases, this remains unconfirmed. The result is
+strong regression evidence for the confirmed allocator correction and for
+mixed AFP/SMB compatibility; it is not evidence that every unrelated network
+silence is fixed.

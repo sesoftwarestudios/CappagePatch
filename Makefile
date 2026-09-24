@@ -32,7 +32,14 @@ PIP := $(VENVDIR)/bin/pip
 PY := $(VENVDIR)/bin/python
 
 venv:
-	$(PYTHON) -m venv $(VENVDIR)
+	@if [ -x "$(PY)" ] && \
+		[ "$$($(PY) -c 'import sys; print("%d.%d" % sys.version_info[:2])')" != \
+		  "$$($(PYTHON) -c 'import sys; print("%d.%d" % sys.version_info[:2])')" ]; then \
+		echo "Rebuilding $(VENVDIR): its Python version does not match $(PYTHON)."; \
+		$(PYTHON) -m venv --clear $(VENVDIR); \
+	else \
+		$(PYTHON) -m venv $(VENVDIR); \
+	fi
 	@echo "Run: source $(VENVDIR)/bin/activate"
 
 install: venv

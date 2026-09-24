@@ -1,6 +1,9 @@
-# Release Verification
+# CappagePatch Release Verification
 
-TimeCapsuleSMB releases contain the macOS app bundle, the Python CLI, boot scripts, and checked-in static NetBSD binaries used by deploy. The release process should make it clear which artifacts were shipped and how to verify them.
+CappagePatch releases contain the macOS app bundle, Python CLI, boot scripts,
+and checked-in static NetBSD binaries used by deploy. The release process must
+make clear which artifacts were shipped, how they were validated, and which
+parts remain inherited from TimeCapsuleSMB.
 
 ## Samba 4.25.0rc2 candidate
 
@@ -21,10 +24,12 @@ macOS mounted-share checks documented in `tests/samba/README.md`.
 
 ## Release Assets
 
-The primary user-facing release asset is `TimeCapsuleSMB.app.zip` on the GitHub release page. GitHub shows the SHA256 digest for uploaded release assets in the asset metadata. Users can verify a downloaded app zip with:
+The primary user-facing release asset is `CappagePatch.app.zip` on the GitHub
+release page. GitHub shows the SHA256 digest for uploaded release assets in the
+asset metadata. Users can verify a downloaded app zip with:
 
 ```bash
-shasum -a 256 TimeCapsuleSMB.app.zip
+shasum -a 256 CappagePatch.app.zip
 ```
 
 The digest printed by `shasum` should match the `sha256:` value shown for the asset on GitHub.
@@ -50,10 +55,48 @@ Before tagging a release, run:
 For a full local release check, run:
 
 ```bash
-make test-parallel
+make test
 swift test --package-path macos/TimeCapsuleSMB
-python3 macos/TimeCapsuleSMB/tools/package_app.py --configuration release --arch native --full-validation
+python3 macos/TimeCapsuleSMB/tools/package_app.py \
+  --configuration release --arch universal --zip --full-validation
 ```
+
+Before publishing a universal archive, verify the app executable, helper,
+embedded Python runtime, `sshpass`, `smbclient`, and every bundled non-system
+dylib contain both `arm64` and `x86_64` support where applicable. The package
+validator performs this check; do not relabel a native-only test ZIP as a
+universal release.
+
+When an architecture-specific tool comes from a verified package archive
+rather than a system installation, point the packager at the tool and its
+unpacked dependency root. For example:
+
+```bash
+TCAPSULE_PACKAGE_SMBCLIENT_X86_64=/path/to/root/opt/local/bin/smbclient \
+TCAPSULE_PACKAGE_DEPENDENCY_ROOT_X86_64=/path/to/root \
+python3 macos/TimeCapsuleSMB/tools/package_app.py \
+  --configuration release --arch universal --zip --full-validation
+```
+
+The dependency overlay is selected only for Mach-O files of the matching
+architecture. Full validation still rejects missing slices, external library
+references, or invalid signatures.
+
+## Tested A1470 release candidate
+
+The September 22-23, 2026 candidate completed the following checks on an A1470
+(`TimeCapsule8,119`):
+
+- corrected Checkup with simultaneous SMB and AFP Bonjour advertisements;
+- authenticated SMB listing and file-operation checks;
+- one fresh full macOS 26 Time Machine backup and subsequent SMB backups; and
+- one completed OS X Lion AFP backup while macOS 26 SMB backups remained
+  functional.
+
+The Lion progress display changed once in a way that might have represented a
+resume, but no disconnect or backup error was observed. Release notes must call
+that an unconfirmed interruption, not a reproduced defect or a cleanly measured
+network outage.
 
 ## NetBSD Builds
 
@@ -86,6 +129,10 @@ The macOS app packaging flow supports Developer ID signing and notarization when
 - Run the artifact manifest tests.
 - Run the Python and Swift test suites.
 - Package and validate the macOS app.
-- Upload `TimeCapsuleSMB.app.zip` to the GitHub release.
+- Confirm `README.md`, `CAPPAGEPATCH_CHANGES.md`, and
+  `SMB_STALL_INVESTIGATION.md` describe the tested behavior without overstating
+  the result.
+- Confirm the universal package contains working tools for both architectures.
+- Upload `CappagePatch.app.zip` to the GitHub release.
 - Confirm the uploaded asset SHA256 digest is visible on GitHub.
 - Include user-facing release notes with compatibility or flash-safety warnings when applicable.

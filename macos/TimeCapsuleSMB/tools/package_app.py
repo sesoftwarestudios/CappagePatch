@@ -1090,6 +1090,33 @@ def resolve_macho_dependency(loader: Path, app: Path, dependency: str) -> Path |
     return None
 
 
+def external_macho_dependency_source(loader: Path, dependency: str) -> Path:
+    """Resolve an absolute dependency through an architecture-specific overlay."""
+    loader_architectures = macho_architectures(loader)
+    environment_names = [
+        f"TCAPSULE_PACKAGE_DEPENDENCY_ROOT_{architecture.upper().replace('-', '_')}"
+        for architecture in sorted(loader_architectures)
+    ]
+    environment_names.append("TCAPSULE_PACKAGE_DEPENDENCY_ROOT")
+    relative_dependency = dependency.removeprefix("/")
+    for environment_name in environment_names:
+        root = os.getenv(environment_name)
+        if not root:
+            continue
+        candidate = Path(root).expanduser() / relative_dependency
+        if not candidate.is_file():
+            continue
+        candidate_architectures = macho_architectures(candidate)
+        if (
+            loader_architectures
+            and candidate_architectures
+            and not loader_architectures.issubset(candidate_architectures)
+        ):
+            continue
+        return candidate.resolve()
+    return Path(dependency).resolve()
+
+
 def bundled_dependency_name(source: Path, used_names: set[str], *, preferred_name: str | None = None) -> str:
     name = preferred_name or source.name
     if name not in used_names:
@@ -1297,7 +1324,7 @@ def vendor_macho_dependencies(app: Path) -> set[Path]:
             preferred_name: str
             if is_external_macho_dependency(dependency):
                 source_path = Path(dependency)
-                source = source_path.resolve()
+                source = external_macho_dependency_source(current, dependency)
                 preferred_name = source_path.name
             elif dependency.startswith("@loader_path/") and current_resolved in bundle_to_source:
                 relative_dependency = dependency.removeprefix("@loader_path/")

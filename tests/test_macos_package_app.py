@@ -746,6 +746,60 @@ def test_copy_tools_requires_each_architecture_when_requested(monkeypatch: pytes
         package_app.copy_tools(tmp_path / "Resources", ("arm64", "x86_64"))
 
 
+def test_external_macho_dependency_source_uses_matching_architecture_overlay(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    package_app = load_package_app_module()
+    loader = tmp_path / "smbclient"
+    loader.write_text("loader", encoding="utf-8")
+    overlay_root = tmp_path / "overlay"
+    dependency = overlay_root / "opt" / "local" / "lib" / "libexample.dylib"
+    dependency.parent.mkdir(parents=True)
+    dependency.write_text("dependency", encoding="utf-8")
+    monkeypatch.setenv("TCAPSULE_PACKAGE_DEPENDENCY_ROOT_X86_64", str(overlay_root))
+
+    def fake_architectures(path: Path) -> set[str]:
+        if path in {loader, dependency}:
+            return {"x86_64"}
+        return set()
+
+    monkeypatch.setattr(package_app, "macho_architectures", fake_architectures)
+
+    assert package_app.external_macho_dependency_source(
+        loader,
+        "/opt/local/lib/libexample.dylib",
+    ) == dependency.resolve()
+
+
+def test_external_macho_dependency_source_rejects_wrong_architecture_overlay(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    package_app = load_package_app_module()
+    loader = tmp_path / "smbclient"
+    loader.write_text("loader", encoding="utf-8")
+    overlay_root = tmp_path / "overlay"
+    dependency = overlay_root / "opt" / "local" / "lib" / "libexample.dylib"
+    dependency.parent.mkdir(parents=True)
+    dependency.write_text("dependency", encoding="utf-8")
+    monkeypatch.setenv("TCAPSULE_PACKAGE_DEPENDENCY_ROOT_X86_64", str(overlay_root))
+
+    def fake_architectures(path: Path) -> set[str]:
+        if path == loader:
+            return {"x86_64"}
+        if path == dependency:
+            return {"arm64"}
+        return set()
+
+    monkeypatch.setattr(package_app, "macho_architectures", fake_architectures)
+
+    assert package_app.external_macho_dependency_source(
+        loader,
+        "/opt/local/lib/libexample.dylib",
+    ) == Path("/opt/local/lib/libexample.dylib")
+
+
 def test_copy_native_tools_layer_reuses_cached_vendored_layer(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
