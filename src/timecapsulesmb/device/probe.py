@@ -1292,6 +1292,14 @@ def _fstat_has_udp_port(fstat_out: str, proc_name: str, family: str, port: int) 
     return False
 
 
+def _fstat_has_tcp_port(fstat_out: str, proc_name: str, port: int) -> bool:
+    port_suffix = f":{port}"
+    for line in fstat_out.splitlines():
+        if proc_name in line and " stream tcp " in line and port_suffix in line:
+            return True
+    return False
+
+
 def _mdns_bound_required_5353(fstat_out: str, families: tuple[str, ...]) -> bool:
     return bool(families) and all(_fstat_has_udp_port(fstat_out, "mdns-advertiser", family, 5353) for family in families)
 
@@ -1403,9 +1411,20 @@ echo "$RUNTIME_MDNS_BIN"
     if mdns_pids:
         _append_step(steps, "mdns_process", "pass", "mdns process is running")
 
-    families_script = r'''
-RUNTIME_MDNS_BIN=${RUNTIME_MDNS_BIN:-/mnt/Flash/mdns-advertiser}
+    families_script = rf'''
+RUNTIME_MDNS_BIN=${{RUNTIME_MDNS_BIN:-/mnt/Flash/mdns-advertiser}}
+RUNTIME_CONFIG_FILE=${{RUNTIME_CONFIG_FILE:-{FLASH_RUNTIME_CONFIG}}}
+MDNS_ADVERTISE_AFP=0
+if [ -f "$RUNTIME_CONFIG_FILE" ]; then
+    . "$RUNTIME_CONFIG_FILE"
+fi
 "$RUNTIME_MDNS_BIN" --print-mdns-socket-families
+families_status=$?
+case "$MDNS_ADVERTISE_AFP" in
+    1|true|TRUE|yes|YES) echo TC_AFP_COMPAT_ENABLED ;;
+    *) echo TC_AFP_COMPAT_DISABLED ;;
+esac
+exit "$families_status"
 '''
     families_step, families_proc = _run_timed_probe_step(
         connection,
@@ -1421,6 +1440,7 @@ RUNTIME_MDNS_BIN=${RUNTIME_MDNS_BIN:-/mnt/Flash/mdns-advertiser}
     family_rc = 1 if families_proc is None else families_proc.returncode
     families_out = "" if families_proc is None else families_proc.stdout
     mdns_families = _capability_family_tokens(families_out)
+    legacy_afp_enabled = "TC_AFP_COMPAT_ENABLED" in families_out.splitlines()
     if family_rc == 11:
         if mdns_pids:
             _append_step(steps, "mdns_auto_ip", "fail", "mdns is waiting for a usable address")
@@ -1452,9 +1472,23 @@ RUNTIME_MDNS_BIN=${RUNTIME_MDNS_BIN:-/mnt/Flash/mdns-advertiser}
             _append_step(steps, "apple_mdns", "pass", "Apple mDNSResponder is stopped")
         return _readiness_result_from_steps(ready=False, steps=steps, default_detail="managed mDNS takeover not active")
 
+    afp_pids = _parse_live_pids_for_ucomm(ps_out, "afpserver") if legacy_afp_enabled else ()
+    fstat_pids = (*mdns_pids, *afp_pids)
     fstat_script = "if [ ! -x /usr/bin/fstat ]; then echo fstat_missing; exit 127; fi; " + " ".join(
-        f"/usr/bin/fstat -p {pid} 2>/dev/null || true;" for pid in mdns_pids
+        f"/usr/bin/fstat -p {pid} 2>/dev/null || true;" for pid in fstat_pids
     )
+    if legacy_afp_enabled:
+        fstat_script += (
+            " if /usr/bin/grep -F 'serving service: type=_smb._tcp.local.' "
+            "/mnt/Memory/samba4/var/mdns.log >/dev/null 2>&1; then "
+            "echo TC_SMB_ADVERTISED; else echo TC_SMB_NOT_ADVERTISED; fi;"
+            " if /usr/bin/grep -F 'serving service: type=_afpovertcp._tcp.local.' "
+            "/mnt/Memory/samba4/var/mdns.log >/dev/null 2>&1; then "
+            "echo TC_AFP_ADVERTISED; else echo TC_AFP_NOT_ADVERTISED; fi;"
+            " if /usr/bin/grep \"$(printf '\\t')0x83$\" "
+            "/mnt/Memory/samba4/var/adisk.tsv >/dev/null 2>&1; then "
+            "echo TC_AFP_ADISK_COMPATIBLE; else echo TC_AFP_ADISK_INCOMPATIBLE; fi;"
+        )
     fstat_step, fstat_proc = _run_timed_probe_step(
         connection,
         step_id="mdns_fstat_probe",
@@ -1474,6 +1508,78 @@ RUNTIME_MDNS_BIN=${RUNTIME_MDNS_BIN:-/mnt/Flash/mdns-advertiser}
         _append_step(steps, "mdns_bind_address", "pass", "mdns bind address active")
     else:
         _append_step(steps, "mdns_udp_5353", "fail", "mdns is not bound to required UDP 5353 listener")
+
+    if legacy_afp_enabled:
+        if "TC_SMB_ADVERTISED" in fstat_out.splitlines():
+            _append_step(
+                steps,
+                "legacy_modern_smb_bonjour",
+                "pass",
+                "older Mac compatibility: SMB remains advertised for modern macOS",
+            )
+        else:
+            _append_step(
+                steps,
+                "legacy_modern_smb_bonjour",
+                "fail",
+                "older Mac compatibility is enabled but SMB is not advertised for modern macOS",
+            )
+        if afp_pids:
+            _append_step(
+                steps,
+                "legacy_afp_process",
+                "pass",
+                "older Mac compatibility: Apple AFP server is running",
+            )
+        else:
+            _append_step(
+                steps,
+                "legacy_afp_process",
+                "fail",
+                "older Mac compatibility is enabled but Apple AFP server is not running",
+            )
+        if _fstat_has_tcp_port(fstat_out, "afpserver", 548):
+            _append_step(
+                steps,
+                "legacy_afp_tcp_548",
+                "pass",
+                "older Mac compatibility: AFP is listening on TCP 548",
+            )
+        else:
+            _append_step(
+                steps,
+                "legacy_afp_tcp_548",
+                "fail",
+                "older Mac compatibility is enabled but AFP is not listening on TCP 548",
+            )
+        if "TC_AFP_ADVERTISED" in fstat_out.splitlines():
+            _append_step(
+                steps,
+                "legacy_afp_bonjour",
+                "pass",
+                "older Mac compatibility: AFP is advertised over Bonjour",
+            )
+        else:
+            _append_step(
+                steps,
+                "legacy_afp_bonjour",
+                "fail",
+                "older Mac compatibility is enabled but AFP is not advertised over Bonjour",
+            )
+        if "TC_AFP_ADISK_COMPATIBLE" in fstat_out.splitlines():
+            _append_step(
+                steps,
+                "legacy_afp_adisk",
+                "pass",
+                "older Mac compatibility: Time Machine advertises AFP and SMB",
+            )
+        else:
+            _append_step(
+                steps,
+                "legacy_afp_adisk",
+                "fail",
+                "older Mac compatibility is enabled but Time Machine AFP metadata is missing",
+            )
 
     if apple_mdns_running:
         _append_step(steps, "apple_mdns", "fail", "Apple mDNSResponder is still running")

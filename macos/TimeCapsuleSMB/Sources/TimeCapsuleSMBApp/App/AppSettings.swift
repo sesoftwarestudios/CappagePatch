@@ -160,10 +160,10 @@ struct AppSettings: Codable, Equatable {
         appearance: .system,
         defaultBonjourTimeoutSeconds: 6,
         defaultDeviceSettings: .default,
-        telemetryEnabled: true,
+        telemetryEnabled: false,
         helperPathOverride: "",
         showRawBackendEventsByDefault: true,
-        checkForUpdatesOnLaunch: true,
+        checkForUpdatesOnLaunch: false,
         versionCheckURL: "",
         timeMachineWarningsEnabled: true
     )
@@ -217,13 +217,18 @@ struct AppSettings: Codable, Equatable {
         )
         defaultDeviceSettings = try container.decodeIfPresent(DeviceProfileSettings.self, forKey: .defaultDeviceSettings)
             ?? defaults.defaultDeviceSettings
-        telemetryEnabled = try container.decodeIfPresent(Bool.self, forKey: .telemetryEnabled) ?? defaults.telemetryEnabled
+        // CappagePatch does not ship a telemetry service. Ignore a legacy
+        // TimeCapsuleSMB preference so existing installs cannot silently opt
+        // this independent build back in.
+        telemetryEnabled = false
         helperPathOverride = try container.decodeIfPresent(String.self, forKey: .helperPathOverride) ?? defaults.helperPathOverride
         showRawBackendEventsByDefault = try container.decodeIfPresent(Bool.self, forKey: .showRawBackendEventsByDefault)
             ?? defaults.showRawBackendEventsByDefault
-        checkForUpdatesOnLaunch = try container.decodeIfPresent(Bool.self, forKey: .checkForUpdatesOnLaunch)
-            ?? defaults.checkForUpdatesOnLaunch
         versionCheckURL = try container.decodeIfPresent(String.self, forKey: .versionCheckURL) ?? defaults.versionCheckURL
+        let requestedUpdateCheck = try container.decodeIfPresent(Bool.self, forKey: .checkForUpdatesOnLaunch)
+            ?? defaults.checkForUpdatesOnLaunch
+        checkForUpdatesOnLaunch = requestedUpdateCheck
+            && !versionCheckURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         timeMachineWarningsEnabled = try container.decodeIfPresent(Bool.self, forKey: .timeMachineWarningsEnabled)
             ?? defaults.timeMachineWarningsEnabled
     }
@@ -439,12 +444,78 @@ struct AppSettingsDraft: Equatable {
         mountWaitSeconds = String(settings.defaultDeviceSettings.mountWaitSeconds)
         ataIdleSeconds = String(settings.defaultDeviceSettings.ataIdleSeconds)
         ataStandby = settings.defaultDeviceSettings.ataStandby.map(String.init) ?? ""
-        telemetryEnabled = settings.telemetryEnabled
+        telemetryEnabled = false
         helperPathOverride = settings.helperPathOverride
         showRawBackendEventsByDefault = settings.showRawBackendEventsByDefault
         checkForUpdatesOnLaunch = settings.checkForUpdatesOnLaunch
         versionCheckURL = settings.versionCheckURL
         timeMachineWarningsEnabled = settings.timeMachineWarningsEnabled
+    }
+
+    var usesRecommendedDeviceSettings: Bool {
+        defaultBonjourTimeoutSeconds == Self.formatDouble(AppSettings.default.defaultBonjourTimeoutSeconds)
+            && currentDeviceSettings == .default
+    }
+
+    mutating func applyRecommendedDeviceSettings() {
+        applyDeviceSettings(.default)
+        defaultBonjourTimeoutSeconds = Self.formatDouble(AppSettings.default.defaultBonjourTimeoutSeconds)
+    }
+
+    mutating func setLegacyMacCompatibility(_ enabled: Bool) {
+        mdnsAdvertiseAFP = enabled
+    }
+
+    private mutating func applyDeviceSettings(_ settings: DeviceProfileSettings) {
+        nbnsEnabled = settings.nbnsEnabled
+        rsyncEnabled = settings.rsyncEnabled
+        internalShareUseDiskRoot = settings.internalShareUseDiskRoot
+        smbBindLanOnly = settings.smbBindLanOnly
+        smbBrowseCompatibility = settings.smbBrowseCompatibility
+        mdnsAdvertiseAFP = settings.mdnsAdvertiseAFP
+        anyProtocol = settings.anyProtocol
+        requireSMBEncryption = settings.requireSMBEncryption
+        forceDisableSMBSigningAndEncryption = settings.forceDisableSMBSigningAndEncryption
+        fruitMetadataNetatalk = settings.fruitMetadataNetatalk
+        vfsAIOForkEnabled = settings.vfsAIOForkEnabled
+        debugLogging = settings.debugLogging
+        mountWaitSeconds = String(settings.mountWaitSeconds)
+        ataIdleSeconds = String(settings.ataIdleSeconds)
+        ataStandby = settings.ataStandby.map(String.init) ?? ""
+    }
+
+    private var currentDeviceSettings: DeviceProfileSettings? {
+        guard let mountWait = ValueParsers.nonNegativeInteger(mountWaitSeconds),
+              let ataIdle = ValueParsers.nonNegativeInteger(ataIdleSeconds)
+        else {
+            return nil
+        }
+        let trimmedStandby = ataStandby.trimmingCharacters(in: .whitespacesAndNewlines)
+        let standby: Int?
+        if trimmedStandby.isEmpty {
+            standby = nil
+        } else if let value = ValueParsers.nonNegativeInteger(trimmedStandby) {
+            standby = value
+        } else {
+            return nil
+        }
+        return DeviceProfileSettings(
+            nbnsEnabled: nbnsEnabled,
+            rsyncEnabled: rsyncEnabled,
+            internalShareUseDiskRoot: internalShareUseDiskRoot,
+            smbBindLanOnly: smbBindLanOnly,
+            smbBrowseCompatibility: smbBrowseCompatibility,
+            mdnsAdvertiseAFP: mdnsAdvertiseAFP,
+            anyProtocol: anyProtocol,
+            requireSMBEncryption: requireSMBEncryption,
+            forceDisableSMBSigningAndEncryption: forceDisableSMBSigningAndEncryption,
+            fruitMetadataNetatalk: fruitMetadataNetatalk,
+            vfsAIOForkEnabled: vfsAIOForkEnabled,
+            debugLogging: debugLogging,
+            mountWaitSeconds: mountWait,
+            ataIdleSeconds: ataIdle,
+            ataStandby: standby
+        )
     }
 
     func validatedSettings() throws -> AppSettings {
@@ -493,7 +564,7 @@ struct AppSettingsDraft: Equatable {
                 ataIdleSeconds: ataIdle,
                 ataStandby: parsedAtaStandby
             ),
-            telemetryEnabled: telemetryEnabled,
+            telemetryEnabled: false,
             helperPathOverride: helperPathOverride.trimmingCharacters(in: .whitespacesAndNewlines),
             showRawBackendEventsByDefault: showRawBackendEventsByDefault,
             checkForUpdatesOnLaunch: checkForUpdatesOnLaunch,

@@ -151,6 +151,36 @@ struct DeviceProfileEditorDraft: Equatable {
         )
     }
 
+    var usesRecommendedSettings: Bool {
+        (try? validatedSettings()) == .default
+    }
+
+    mutating func applyRecommendedSettings() {
+        applySettings(.default)
+    }
+
+    mutating func setLegacyMacCompatibility(_ enabled: Bool) {
+        mdnsAdvertiseAFP = enabled
+    }
+
+    private mutating func applySettings(_ settings: DeviceProfileSettings) {
+        nbnsEnabled = settings.nbnsEnabled
+        rsyncEnabled = settings.rsyncEnabled
+        internalShareUseDiskRoot = settings.internalShareUseDiskRoot
+        smbBindLanOnly = settings.smbBindLanOnly
+        smbBrowseCompatibility = settings.smbBrowseCompatibility
+        mdnsAdvertiseAFP = settings.mdnsAdvertiseAFP
+        anyProtocol = settings.anyProtocol
+        requireSMBEncryption = settings.requireSMBEncryption
+        forceDisableSMBSigningAndEncryption = settings.forceDisableSMBSigningAndEncryption
+        fruitMetadataNetatalk = settings.fruitMetadataNetatalk
+        vfsAIOForkEnabled = settings.vfsAIOForkEnabled
+        debugLogging = settings.debugLogging
+        mountWaitSeconds = String(settings.mountWaitSeconds)
+        ataIdleSeconds = String(settings.ataIdleSeconds)
+        ataStandby = settings.ataStandby.map(String.init) ?? ""
+    }
+
     var trimmedHost: String {
         host.trimmingCharacters(in: .whitespacesAndNewlines)
     }

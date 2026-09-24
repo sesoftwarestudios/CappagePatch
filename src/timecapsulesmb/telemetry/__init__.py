@@ -18,10 +18,10 @@ from timecapsulesmb.identity import load_install_identity
 
 
 SCHEMA_VERSION = 5
-DEFAULT_TELEMETRY_URL = "https://timecapsulesmb.jamesyc.com/v1/events"
+DEFAULT_TELEMETRY_URL = ""
 TELEMETRY_URL_ENV = "TCAPSULE_TELEMETRY_URL"
 TELEMETRY_TOKEN_ENV = "TCAPSULE_TELEMETRY_TOKEN"
-DEFAULT_TELEMETRY_TOKEN = "d65373762e893ae18c8aaa95a8f1b3a3464611f33b30983909543535fa8b0733"
+DEFAULT_TELEMETRY_TOKEN = ""
 REQUEST_TIMEOUT_SECONDS = 10.0
 MAX_SEND_ATTEMPTS = 2
 
@@ -45,7 +45,7 @@ class TelemetryClient:
         self.endpoint = endpoint
         self.token = token
         self.context = context
-        self.enabled = enabled and context is not None and bool(token)
+        self.enabled = enabled and context is not None and bool(endpoint) and bool(token)
 
     @classmethod
     def from_config(

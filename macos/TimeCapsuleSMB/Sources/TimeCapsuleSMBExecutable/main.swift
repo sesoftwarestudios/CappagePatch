@@ -4,7 +4,7 @@ import SwiftUI
 import TimeCapsuleSMBApp
 
 @main
-struct TimeCapsuleSMBExecutable: App {
+struct CappagePatchApp: App {
     @NSApplicationDelegateAdaptor(AppCloseGuardApplicationDelegate.self) private var appCloseGuardDelegate
 
     init() {
@@ -24,8 +24,10 @@ struct TimeCapsuleSMBExecutable: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(AppBrand.displayName) {
             ContentView()
         }
+        .windowStyle(.titleBar)
+        .defaultSize(width: 1180, height: 780)
     }
 }

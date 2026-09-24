@@ -1,12 +1,67 @@
-# TimeCapsuleSMB
+# CappagePatch
 
-[![CI](https://github.com/jamesyc/TimeCapsuleSMB/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesyc/TimeCapsuleSMB/actions/workflows/ci.yml)
-[![Latest Release](https://img.shields.io/github/v/release/jamesyc/TimeCapsuleSMB)](https://github.com/jamesyc/TimeCapsuleSMB/releases/latest)
-[![License](https://img.shields.io/github/license/jamesyc/TimeCapsuleSMB)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
-[![macOS App](https://img.shields.io/badge/macOS%20app-download-brightgreen)](https://github.com/jamesyc/TimeCapsuleSMB/releases/latest)
 
-Apple AirPort Time Capsules only support AFP and SMB1 natively. Apple has removed AFP support in macOS 27 (and removed SMB1 support from macOS a long time ago). TimeCapsuleSMB is a Samba setup that runs directly on the Time Capsule itself and makes it compatible with macOS 27+ computers. Newer computers running macOS 27 can connect to the Time Capsule as a network share, and use it for Time Machine backups. Your old backup will automatically work after updating, no wipe required!
+CappagePatch is an independent, modified GPLv3 fork of
+[TimeCapsuleSMB](https://github.com/jamesyc/TimeCapsuleSMB). It installs modern
+Samba directly on compatible Apple AirPort Time Capsules so current macOS
+versions can use them as SMB network shares and Time Machine destinations.
+It is not endorsed by the upstream project or Apple Inc.
+
+**CappagePatch was created and is maintained by
+[SE Software Studios](https://github.com/sesoftwarestudios).**
+
+**Benjamin Uitzetter — CEO and Senior Developer**
+
+This fork adds its own macOS identity and interface, disables inherited
+telemetry and automatic update checks by default, and includes the no-pthread
+fork-child allocator correction documented in
+[SMB_STALL_INVESTIGATION.md](SMB_STALL_INVESTIGATION.md). That correction fixes
+the confirmed allocator-corruption window during child creation; it does not
+claim that every possible long SMB silence has the same cause.
+
+The Python module name, `tcapsule` helper name, remote payload layout,
+Application Support directory, and Keychain service intentionally retain their
+TimeCapsuleSMB-compatible identifiers. Keeping those internal identifiers
+prevents an install of CappagePatch from orphaning existing device profiles,
+credentials, or managed files.
+
+See [CAPPAGEPATCH_CHANGES.md](CAPPAGEPATCH_CHANGES.md) for the modification
+record and [NOTICE.md](NOTICE.md) for attribution and licensing details.
+
+For normal use, CappagePatch labels the tested SMB2/SMB3 configuration as
+**Recommended for modern macOS**. New devices start with that preset. Existing
+devices show whether they still match it and provide a one-click **Use
+Recommended** action. Low-level protocol, service, security, and disk timing
+controls remain available under **Advanced settings** for troubleshooting.
+
+### Older Mac compatibility
+
+Older OS X releases use AFP, rather than SMB, for network Time Machine. If a
+Snow Leopard through El Capitan Mac also needs this Time Capsule, open the
+device's **Settings** tab and choose **Enable Older Mac Support**, save the
+profile, and run **Install / Update**. CappagePatch then advertises the Time
+Capsule's original AFP service alongside its SMB2/SMB3 service and publishes
+the combined AFP+SMB Time Machine capability. It does not enable SMB1 or turn
+off SMB signing or encryption support. Newer Macs continue to discover and
+use the `_smb._tcp` destination on port 445.
+
+The normal modern-macOS preset leaves AFP discovery off so current Macs see the
+SMB destination. In older-Mac mode, the Checkup also refuses to pass unless the
+modern SMB advertisement is still present, then verifies the AFP server, TCP
+port 548, Bonjour record, and combined Time Machine record.
+Apple's archived Lion documentation confirms that network Time Machine on that
+release requires AFP: [OS X Lion: Disks you can use with Time
+Machine](https://support.apple.com/kb/PH4327?locale=en_US).
+
+## How it works
+
+Apple AirPort Time Capsules only support AFP and SMB1 natively. CappagePatch
+uses the inherited TimeCapsuleSMB deployment system to run a current Samba
+server directly on the Time Capsule. A current Mac can then connect over SMB
+and select the advertised disk as a Time Machine destination. Existing backups
+do not need to be wiped merely to install or update the server.
 
 This project has 2 parts:
 - a fork of Samba 4, modified to work on the Apple Time Capsule 
@@ -24,7 +79,8 @@ The current authentication model accepts any user as the username, and the Samba
 
 AirPort Extreme devices are not officially supported. Unofficially, they work fine. Note that this is installed to the hard drive, so it will not work for an Airport Extreme without a hard drive (as there is not enough space to store the binaries on the flash memory).   
 
-If TimeCapsuleSMB has been useful to you, you can [buy me a coffee](https://buymeacoffee.com/jamesyc) to support the project.
+If the upstream TimeCapsuleSMB work has been useful to you, you can
+[support its original developer](https://buymeacoffee.com/jamesyc).
 
 ## Requirements
 
@@ -44,9 +100,9 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 
 ## Quick Start (macOS app)
 
-1. Download the latest release of the app from here: https://github.com/jamesyc/TimeCapsuleSMB/releases
+1. Download `CappagePatch.app.zip` from this repository's Releases page, or build it from source as described below.
 2. Unzip the app and run it. If you get a "cannot be opened" warning, you need to manually disable Gatekeeper for this app.
-3. Make sure *Local Network* permissions is granted (System Settings → Privacy & Security → Local Network → make sure TimeCapsuleSMB is allowed, then quit/reopen the app). Close and re-open the app after granting permissions.
+3. Make sure *Local Network* permission is granted (System Settings → Privacy & Security → Local Network → enable CappagePatch, then quit and reopen the app).
 4. Click "Add Device" on the left sidebar, and select your device. 
 5. Enter your device password, and click "Save Device". 
 6. Wait for the app to enable SSH for your Time Capsule.
@@ -64,6 +120,20 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 11. Delete the old AFP servers listed in macOS Time Machine settings. Then add the new Samba server destination. *This step will not delete your old backups from the disk.*
 
 Please [read the FAQ](FAQ.md) for more information. If you have an issue that could not be resolved via the FAQ, I would appreciate it if you [file an issue here](https://github.com/jamesyc/TimeCapsuleSMB/issues) for help.
+
+### Build the macOS app
+
+On a Mac with Xcode installed:
+
+```bash
+cd macos/TimeCapsuleSMB
+python3 tools/package_app.py --arch universal --zip
+```
+
+The packager produces `dist/CappagePatch.app` and
+`dist/CappagePatch.app.zip`. Distribution signing and notarization require
+your own Apple Developer identity; see the packager's `--help` output for those
+options.
 
 ## Quick Start (with python)
 

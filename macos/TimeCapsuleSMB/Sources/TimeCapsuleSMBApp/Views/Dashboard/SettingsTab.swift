@@ -72,6 +72,20 @@ private struct DeviceProfileEditorView: View {
                     .foregroundStyle(.red)
             }
 
+            RecommendedSettingsCard(
+                isRecommended: store.draft.usesRecommendedSettings,
+                actionTitle: "Use Recommended"
+            ) {
+                store.draft.applyRecommendedSettings()
+            }
+
+            LegacyMacCompatibilityCard(
+                isEnabled: store.draft.mdnsAdvertiseAFP,
+                followUpText: "Save the profile, then run Install / Update to apply this on the Time Capsule."
+            ) { enabled in
+                store.draft.setLegacyMacCompatibility(enabled)
+            }
+
             DeviceProfileAdvancedSettingsView(store: store)
 
             HStack {
@@ -127,6 +141,7 @@ private struct DeviceProfileAdvancedSettingsView: View {
                 Text(L10n.string("profile_editor.advanced.deploy_notice"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                AdvancedSettingsGuidance()
 
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
                     GridRow {
@@ -149,7 +164,9 @@ private struct DeviceProfileAdvancedSettingsView: View {
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.enable_nbns"), isOn: $store.draft.nbnsEnabled)
+                            .help("Recommended on: helps older network browsers find the device.")
                         Toggle(L10n.string("toggle.enable_rsync"), isOn: $store.draft.rsyncEnabled)
+                            .help("Leave off unless you use rsync; it opens an unauthenticated service on TCP 873.")
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.internal_share_use_disk_root"), isOn: $store.draft.internalShareUseDiskRoot)
@@ -157,24 +174,31 @@ private struct DeviceProfileAdvancedSettingsView: View {
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.smb_browse_compatibility"), isOn: $store.draft.smbBrowseCompatibility)
+                            .help("Leave off unless a client cannot list available SMB shares.")
                         Toggle(L10n.string("toggle.mdns_advertise_afp"), isOn: $store.draft.mdnsAdvertiseAFP)
+                            .help("Legacy only. Modern macOS users should leave AFP advertisement off.")
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.use_netatalk_metadata"), isOn: $store.draft.fruitMetadataNetatalk)
+                            .help("Recommended on for compatibility with existing Time Machine metadata.")
                         Toggle(L10n.string("toggle.force_debug_logging"), isOn: $store.draft.debugLogging)
+                            .help("Troubleshooting only; verbose logging creates additional device writes.")
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.enable_vfs_aio_fork"), isOn: $store.draft.vfsAIOForkEnabled)
+                            .help("Experimental troubleshooting option. Leave off for normal backups.")
                             .gridCellColumns(2)
                     }
                     GridRow {
                         Toggle(L10n.string("toggle.any_protocol"), isOn: anyProtocolBinding)
                             .disabled(!SMBProtocolOptionPolicy.allowsAnyProtocol(requireSMBEncryption: store.draft.requireSMBEncryption))
+                            .help("Leave off to keep the server on SMB2 and SMB3.")
                         Toggle(L10n.string("toggle.require_smb_encryption"), isOn: requireSMBEncryptionBinding)
                             .disabled(!SMBProtocolOptionPolicy.allowsRequireSMBEncryption(
                                 anyProtocol: store.draft.anyProtocol,
                                 forceDisableSMBSigningAndEncryption: store.draft.forceDisableSMBSigningAndEncryption
                             ))
+                            .help("Optional. Encryption improves confidentiality but costs performance on this hardware.")
                     }
                     GridRow {
                         Toggle(
@@ -184,6 +208,7 @@ private struct DeviceProfileAdvancedSettingsView: View {
                         .disabled(!SMBProtocolOptionPolicy.allowsForceDisableSMBSigningAndEncryption(
                             requireSMBEncryption: store.draft.requireSMBEncryption
                         ))
+                        .help("Not recommended. Use only for a diagnosed compatibility problem.")
                         .gridCellColumns(2)
                     }
                     GridRow {

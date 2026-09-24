@@ -70,6 +70,31 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.settings.telemetryEnabled)
     }
 
+    func testLegacyNetworkPreferencesAreMigratedToIndependentDefaults() async throws {
+        let temp = try TemporaryDirectory()
+        let settingsURL = temp.url.appendingPathComponent("settings.json")
+        try #"{"telemetryEnabled":true,"checkForUpdatesOnLaunch":true,"versionCheckURL":""}"#
+            .write(to: settingsURL, atomically: true, encoding: .utf8)
+        let store = AppSettingsStore(settingsURL: settingsURL)
+
+        await store.load()
+
+        XCTAssertEqual(store.state, .loaded)
+        XCTAssertFalse(store.settings.telemetryEnabled)
+        XCTAssertFalse(store.settings.checkForUpdatesOnLaunch)
+    }
+
+    func testConfiguredIndependentUpdateFeedCanRemainEnabled() throws {
+        let data = #"{"checkForUpdatesOnLaunch":true,"versionCheckURL":"https://example.invalid/version.json"}"#
+            .data(using: .utf8)!
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        XCTAssertTrue(settings.checkForUpdatesOnLaunch)
+        XCTAssertEqual(settings.versionCheckURL, "https://example.invalid/version.json")
+        XCTAssertFalse(settings.telemetryEnabled)
+    }
+
     func testLegacyDeviceSettingsWithoutSMBBindLANOnlyUseDefaultOff() throws {
         let data = #"{"nbnsEnabled":true,"debugLogging":false,"mountWaitSeconds":30}"#.data(using: .utf8)!
 
@@ -119,6 +144,47 @@ final class AppSettingsStoreTests: XCTestCase {
         draft = AppSettingsDraft(settings: .default)
         draft.appearance = .dark
         XCTAssertEqual(try draft.validatedSettings().appearance, .dark)
+    }
+
+    func testRecommendedPresetRestoresSafeModernDeviceDefaults() throws {
+        var draft = AppSettingsDraft(settings: .default)
+        draft.defaultBonjourTimeoutSeconds = "15"
+        draft.nbnsEnabled = false
+        draft.rsyncEnabled = true
+        draft.internalShareUseDiskRoot = true
+        draft.smbBrowseCompatibility = true
+        draft.mdnsAdvertiseAFP = true
+        draft.anyProtocol = true
+        draft.fruitMetadataNetatalk = false
+        draft.vfsAIOForkEnabled = true
+        draft.debugLogging = true
+        draft.mountWaitSeconds = "90"
+        draft.ataIdleSeconds = "0"
+        draft.ataStandby = "600"
+
+        XCTAssertFalse(draft.usesRecommendedDeviceSettings)
+
+        draft.applyRecommendedDeviceSettings()
+
+        XCTAssertTrue(draft.usesRecommendedDeviceSettings)
+        let settings = try draft.validatedSettings()
+        XCTAssertEqual(settings.defaultBonjourTimeoutSeconds, AppSettings.default.defaultBonjourTimeoutSeconds)
+        XCTAssertEqual(settings.defaultDeviceSettings, .default)
+    }
+
+    func testOlderMacCompatibilityAddsAFPDiscoveryWithoutWeakeningSMB() throws {
+        var draft = AppSettingsDraft(settings: .default)
+
+        draft.setLegacyMacCompatibility(true)
+
+        let settings = try draft.validatedSettings().defaultDeviceSettings
+        XCTAssertEqual(settings, .legacyMacCompatible)
+        XCTAssertTrue(settings.mdnsAdvertiseAFP)
+        XCTAssertFalse(settings.anyProtocol)
+        XCTAssertFalse(settings.forceDisableSMBSigningAndEncryption)
+
+        draft.setLegacyMacCompatibility(false)
+        XCTAssertEqual(try draft.validatedSettings().defaultDeviceSettings, .default)
     }
 
     func testLocalizationLanguageOverrideUsesSelectedBundleAndEnglishFallback() {
@@ -237,8 +303,8 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertEqual(MaintenanceWorkflow.fsck.title, "磁盘修复")
         XCTAssertEqual(FlashWorkflowState.writeLocked.title, "就绪")
         XCTAssertEqual(error.message, "部署前请检查并重新生成部署计划。")
-        XCTAssertEqual(issue.message, "缺少捆绑的 TimeCapsuleSMB Helper。")
-        XCTAssertEqual(issue.recovery, "重新安装 TimeCapsuleSMB。")
+        XCTAssertEqual(issue.message, "缺少捆绑的 CappagePatch Helper。")
+        XCTAssertEqual(issue.recovery, "重新安装 CappagePatch。")
         XCTAssertEqual(checkup.localizedSummary, "PASS 2，WARN 1，FAIL 0")
         XCTAssertEqual(deploy.localizedSummary, "安装已完成。")
         XCTAssertEqual(L10n.string("install.timeline.title"), "状态")
@@ -249,8 +315,8 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertEqual(MaintenanceWorkflow.fsck.title, "Disk Repair")
         XCTAssertEqual(FlashWorkflowState.writeLocked.title, "Ready")
         XCTAssertEqual(error.message, "Review and regenerate the Install / Update plan before continuing.")
-        XCTAssertEqual(issue.message, "The bundled TimeCapsuleSMB helper is missing.")
-        XCTAssertEqual(issue.recovery, "Reinstall TimeCapsuleSMB.")
+        XCTAssertEqual(issue.message, "The bundled CappagePatch helper is missing.")
+        XCTAssertEqual(issue.recovery, "Reinstall CappagePatch.")
         XCTAssertEqual(checkup.localizedSummary, "PASS 2, WARN 1, FAIL 0")
         XCTAssertEqual(deploy.localizedSummary, "Install completed.")
         XCTAssertEqual(L10n.string("install.timeline.title"), "Status")
@@ -304,6 +370,9 @@ final class AppSettingsStoreTests: XCTestCase {
         let coordinator = OperationCoordinator(backend: BackendClient(runner: runner))
         let settingsStore = AppSettingsStore(settingsURL: temp.url.appendingPathComponent("settings.json"))
         await settingsStore.load()
+        var previousSettings = AppSettings.default
+        previousSettings.telemetryEnabled = true
+        try await settingsStore.save(previousSettings)
         let appStore = AppStore(
             appReadinessStore: AppReadinessStore(backend: coordinator.appLane.backend),
             appSettingsStore: settingsStore,

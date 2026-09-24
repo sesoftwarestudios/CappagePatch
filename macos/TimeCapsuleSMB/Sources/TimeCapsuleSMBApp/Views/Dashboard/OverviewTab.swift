@@ -23,7 +23,7 @@ struct OverviewTab: View {
         )
 
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 18) {
                 if let warning = presentation.hostWarning {
                     WarningBanner(warning: warning)
                 }
@@ -51,6 +51,7 @@ struct OverviewTab: View {
                     }
                 }
             }
+            .padding(4)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -60,24 +61,39 @@ private struct DashboardHeaderView: View {
     let presentation: DeviceDashboardHeaderPresentation
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(presentation.title)
-                        .font(.title2.weight(.semibold))
-                    Text(presentation.connectionTarget)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+        BrandPanel {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 16) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(BrandPalette.accentGradient)
+                        Image(systemName: "externaldrive.fill")
+                            .font(.system(size: 28, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
+                    .frame(width: 64, height: 64)
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(presentation.title)
+                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        Label(presentation.connectionTarget, systemImage: "network")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    StatusBadge(status: presentation.status)
                 }
-                Spacer()
-                StatusBadge(status: presentation.status)
+
+                Divider()
+
+                HStack(alignment: .top, spacing: 36) {
+                    Label(presentation.lastChecked, systemImage: "clock")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: 190, alignment: .leading)
+                    SummaryGrid(rows: presentation.rows.map { ($0.label, $0.value) })
+                }
             }
-
-            Label(presentation.lastChecked, systemImage: "clock")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            SummaryGrid(rows: presentation.rows.map { ($0.label, $0.value) })
         }
     }
 }
@@ -93,10 +109,26 @@ private struct StatusBadge: View {
                 .frame(width: OverviewLayout.actionIconSize, height: OverviewLayout.actionIconSize)
         }
             .font(.caption.weight(.medium))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(.quaternary)
+            .foregroundStyle(statusColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(statusColor.opacity(0.12))
             .clipShape(Capsule())
+    }
+
+    private var statusColor: Color {
+        switch status {
+        case .healthy:
+            return .green
+        case .warning, .activationNeeded:
+            return BrandPalette.amber
+        case .failed, .passwordInvalid, .keychainUnavailable, .offline, .unsupported:
+            return .red
+        case .installing, .checking, .maintaining, .readyToInstall:
+            return BrandPalette.teal
+        default:
+            return .secondary
+        }
     }
 }
 
@@ -109,17 +141,19 @@ private struct DashboardPrimaryActionStrip: View {
     let performSecondary: (DashboardSecondaryAction) -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            DashboardPrimaryActionButton(action: primaryAction, perform: performPrimary)
-                .disabled(!isPrimaryActionEnabled)
+        BrandPanel {
+            HStack(spacing: 8) {
+                DashboardPrimaryActionButton(action: primaryAction, perform: performPrimary)
+                    .disabled(!isPrimaryActionEnabled)
 
-            ForEach(secondaryActions) { action in
-                Button {
-                    performSecondary(action)
-                } label: {
-                    DashboardActionLabel(title: action.title, systemImage: action.systemImage)
+                ForEach(secondaryActions) { action in
+                    Button {
+                        performSecondary(action)
+                    } label: {
+                        DashboardActionLabel(title: action.title, systemImage: action.systemImage)
+                    }
+                    .disabled(!isSecondaryActionEnabled(action))
                 }
-                .disabled(!isSecondaryActionEnabled(action))
             }
         }
     }
@@ -134,6 +168,7 @@ private struct DashboardPrimaryActionButton: View {
             DashboardActionLabel(title: action.title, systemImage: action.systemImage)
         }
         .buttonStyle(.borderedProminent)
+        .tint(BrandPalette.violet)
     }
 }
 
@@ -182,8 +217,12 @@ private struct DashboardHealthSectionView: View {
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, minHeight: OverviewLayout.healthRowMinHeight, alignment: .topLeading)
-                .background(Color.secondary.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(.primary.opacity(0.07))
+                }
             }
         }
     }

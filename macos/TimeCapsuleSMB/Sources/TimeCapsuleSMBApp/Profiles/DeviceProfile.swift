@@ -68,6 +68,12 @@ struct DeviceProfileSettings: Codable, Equatable {
         ataStandby: nil
     )
 
+    static var legacyMacCompatible: DeviceProfileSettings {
+        var settings = Self.default
+        settings.mdnsAdvertiseAFP = true
+        return settings
+    }
+
     init(
         nbnsEnabled: Bool,
         rsyncEnabled: Bool = false,

@@ -369,7 +369,7 @@ final class PendingConfirmationTests: XCTestCase {
         let confirmation = try XCTUnwrap(PendingConfirmation(confirmationEvent: event, originalParams: [:]))
 
         XCTAssertEqual(confirmation.title, "Uninstall?")
-        XCTAssertEqual(confirmation.message, "Remove managed TimeCapsuleSMB files from the device?")
+        XCTAssertEqual(confirmation.message, "Remove managed CappagePatch files from the device?")
         XCTAssertEqual(confirmation.actionTitle, "Uninstall")
     }
 

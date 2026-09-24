@@ -71,6 +71,60 @@ final class DeviceProfileEditorStoreTests: XCTestCase {
         }
     }
 
+    func testRecommendedPresetRestoresSafeModernDeviceSettings() throws {
+        var draft = DeviceProfileEditorDraft(
+            displayName: "Office",
+            host: "10.0.0.2",
+            nbnsEnabled: false,
+            rsyncEnabled: true,
+            internalShareUseDiskRoot: true,
+            smbBrowseCompatibility: true,
+            mdnsAdvertiseAFP: true,
+            anyProtocol: true,
+            fruitMetadataNetatalk: false,
+            vfsAIOForkEnabled: true,
+            debugLogging: true,
+            mountWaitSeconds: "90",
+            ataIdleSeconds: "0",
+            ataStandby: "600"
+        )
+
+        XCTAssertFalse(draft.usesRecommendedSettings)
+
+        draft.applyRecommendedSettings()
+
+        XCTAssertTrue(draft.usesRecommendedSettings)
+        XCTAssertEqual(try draft.validatedSettings(), .default)
+        XCTAssertEqual(draft.displayName, "Office")
+        XCTAssertEqual(draft.host, "10.0.0.2")
+    }
+
+    func testOlderMacCompatibilityOnlyChangesAFPDiscovery() throws {
+        var draft = DeviceProfileEditorDraft(
+            displayName: "Office",
+            host: "10.0.0.2",
+            nbnsEnabled: false,
+            smbBrowseCompatibility: true,
+            mdnsAdvertiseAFP: false,
+            anyProtocol: false,
+            fruitMetadataNetatalk: true,
+            debugLogging: false,
+            mountWaitSeconds: "45"
+        )
+        let original = draft
+
+        draft.setLegacyMacCompatibility(true)
+
+        XCTAssertTrue(draft.mdnsAdvertiseAFP)
+        XCTAssertEqual(draft.nbnsEnabled, original.nbnsEnabled)
+        XCTAssertEqual(draft.smbBrowseCompatibility, original.smbBrowseCompatibility)
+        XCTAssertEqual(draft.anyProtocol, original.anyProtocol)
+        XCTAssertEqual(draft.mountWaitSeconds, original.mountWaitSeconds)
+
+        draft.setLegacyMacCompatibility(false)
+        XCTAssertEqual(draft, original)
+    }
+
     func testUndoingDraftChangeReturnsEditorToCleanState() async throws {
         let fixture = try await makeFixture(responses: [])
         let profile = try await fixture.registry.saveConfiguredDevice(

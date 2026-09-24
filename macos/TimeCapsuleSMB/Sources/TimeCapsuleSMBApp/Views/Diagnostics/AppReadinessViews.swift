@@ -197,7 +197,7 @@ struct AppDiagnosticsView: View {
 
     private func saveDiagnostics() {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "TimeCapsuleSMB-Diagnostics.txt"
+        panel.nameFieldStringValue = AppBrand.diagnosticsFilename
         panel.allowedContentTypes = [.plainText]
         let text = exportText()
         panel.begin { response in

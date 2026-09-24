@@ -5,13 +5,16 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "timecapsulesmb"
 version = "3.0.0-1"
-description = "Deploy modern Samba to Apple AirPort Time Capsules."
+description = "CappagePatch deploys modern Samba to Apple AirPort Time Capsules."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 authors = [
   { name = "James Chang" },
+]
+maintainers = [
+  { name = "Benjamin Uitzetter" },
 ]
 keywords = [
   "airport-time-capsule",
@@ -49,12 +52,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jamesyc/TimeCapsuleSMB"
-Documentation = "https://github.com/jamesyc/TimeCapsuleSMB#readme"
-FAQ = "https://github.com/jamesyc/TimeCapsuleSMB/blob/main/FAQ.md"
-Issues = "https://github.com/jamesyc/TimeCapsuleSMB/issues"
-Releases = "https://github.com/jamesyc/TimeCapsuleSMB/releases"
-Source = "https://github.com/jamesyc/TimeCapsuleSMB"
+Upstream = "https://github.com/jamesyc/TimeCapsuleSMB"
 
 [project.optional-dependencies]
 dev = [

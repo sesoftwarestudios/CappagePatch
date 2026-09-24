@@ -22,16 +22,16 @@ sys.path.insert(0, str(SRC_ROOT))
 
 from timecapsulesmb.core.release import CLI_VERSION, CLI_VERSION_CODE  # noqa: E402
 
-APP_NAME = "TimeCapsuleSMB"
-PRODUCT_NAME = "TimeCapsuleSMB"
+APP_NAME = "CappagePatch"
+PRODUCT_NAME = "CappagePatch"
 HELPER_PRODUCT_NAME = "tcapsule"
 APP_VERSION = CLI_VERSION
 APP_VERSION_CODE = str(CLI_VERSION_CODE)
 APP_ICON_FILE = f"{PRODUCT_NAME}.icns"
 APP_ICON_NAME = PRODUCT_NAME
-DEFAULT_ICON_SOURCE = PACKAGE_ROOT / "Assets" / "AppIcon" / "tcs.jpg"
+DEFAULT_ICON_SOURCE = PACKAGE_ROOT / "Assets" / "AppIcon" / "cappagepatch-v1.png"
 ARTIFACT_MANIFEST = REPO_ROOT / "src" / "timecapsulesmb" / "assets" / "artifact-manifest.json"
-RESOURCE_BUNDLE_NAME = "TimeCapsuleSMBMac_TimeCapsuleSMBApp.bundle"
+RESOURCE_BUNDLE_NAME = "CappagePatchMac_TimeCapsuleSMBApp.bundle"
 PYTHON_RUNTIME_VERSION = "3.13.13"
 PYTHON_RUNTIME_URL = f"https://www.python.org/ftp/python/{PYTHON_RUNTIME_VERSION}/python-{PYTHON_RUNTIME_VERSION}-macos11.pkg"
 PYTHON_FRAMEWORK_NAME = "Python.framework"
@@ -196,7 +196,7 @@ def write_info_plist(contents_dir: Path, *, icon_name: str | None = None) -> Non
         "CFBundleDevelopmentRegion": "en",
         "CFBundleDisplayName": APP_NAME,
         "CFBundleExecutable": PRODUCT_NAME,
-        "CFBundleIdentifier": "com.timecapsulesmb.TimeCapsuleSMB",
+        "CFBundleIdentifier": "org.cappagepatch.CappagePatch",
         "CFBundleName": APP_NAME,
         "CFBundlePackageType": "APPL",
         "CFBundleShortVersionString": APP_VERSION,
@@ -204,7 +204,7 @@ def write_info_plist(contents_dir: Path, *, icon_name: str | None = None) -> Non
         "LSMinimumSystemVersion": "14.0",
         "NSBonjourServices": BONJOUR_SERVICE_TYPES,
         "NSHighResolutionCapable": True,
-        "NSLocalNetworkUsageDescription": "TimeCapsuleSMB discovers and connects to Apple AirPort devices on your local network.",
+        "NSLocalNetworkUsageDescription": "CappagePatch discovers and connects to compatible Apple AirPort devices on your local network.",
     }
     if icon_name:
         info["CFBundleIconFile"] = icon_name
@@ -676,17 +676,21 @@ def prune_python_runtime(framework: Path) -> None:
         "lib/tcl8",
         "lib/tcl8.6",
         "lib/tk8.6",
-        "lib/python3.13/idlelib",
-        "lib/python3.13/tkinter",
-        "lib/python3.13/test",
     ):
         path = version_dir / relative_path
         if path.is_dir():
             shutil.rmtree(path)
         elif path.exists():
             path.unlink()
-    for path in (version_dir / "lib" / "python3.13" / "lib-dynload").glob("_tkinter*.so"):
-        path.unlink()
+    for stdlib_dir in (version_dir / "lib").glob("python3.*"):
+        for relative_path in ("idlelib", "tkinter", "test"):
+            path = stdlib_dir / relative_path
+            if path.is_dir():
+                shutil.rmtree(path)
+            elif path.exists():
+                path.unlink()
+        for path in (stdlib_dir / "lib-dynload").glob("_tkinter*.so"):
+            path.unlink()
 
 
 def remove_python_bytecode(root: Path) -> None:
@@ -771,7 +775,7 @@ def python_site_packages_cache_entry(python: str, architectures: tuple[str, ...]
 def build_python_packages(python: str, site_packages: Path) -> None:
     major, minor = python_major_minor(python)
     if (major, minor) < (3, 9):
-        raise RuntimeError(f"TimeCapsuleSMB.app requires Python 3.9 or newer, got {major}.{minor} from {python}")
+        raise RuntimeError(f"CappagePatch.app requires Python 3.9 or newer, got {major}.{minor} from {python}")
 
     with tempfile.TemporaryDirectory(prefix="timecapsulesmb-package-python-") as tmp:
         build_venv = Path(tmp) / "venv"
@@ -1904,8 +1908,12 @@ def notarize_app(app: Path, output_dir: Path, *, profile: str, timeout: str) -> 
 
 def package_app(args: argparse.Namespace) -> PackageResult:
     architectures = resolve_architectures(args.arch)
-    executable, resource_build_dir = build_swift(args.configuration, architectures)
+    # SwiftPM in Xcode 26 can retain the universal app's build plan and then
+    # mis-resolve the lower-case helper product as a synthetic target. Build
+    # the independent helper first so both products remain reproducible in one
+    # packaging invocation.
     helper_executable = build_helper(args.configuration, architectures)
+    executable, resource_build_dir = build_swift(args.configuration, architectures)
     output_dir = args.output.resolve()
     app = output_dir / f"{APP_NAME}.app"
     contents = app / "Contents"
@@ -1967,8 +1975,8 @@ def package_app(args: argparse.Namespace) -> PackageResult:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build a self-contained TimeCapsuleSMB.app bundle.")
-    parser.add_argument("--output", type=Path, default=PACKAGE_ROOT / "dist", help="Directory that will receive TimeCapsuleSMB.app.")
+    parser = argparse.ArgumentParser(description="Build a self-contained CappagePatch.app bundle.")
+    parser.add_argument("--output", type=Path, default=PACKAGE_ROOT / "dist", help="Directory that will receive CappagePatch.app.")
     parser.add_argument("--configuration", choices=("debug", "release"), default="release", help="Swift build configuration.")
     parser.add_argument(
         "--arch",
@@ -2021,7 +2029,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=os.getenv("TCAPSULE_NOTARY_TIMEOUT", DEFAULT_NOTARY_TIMEOUT),
         help=f"Maximum time to wait for Apple notarization. Defaults to TCAPSULE_NOTARY_TIMEOUT or {DEFAULT_NOTARY_TIMEOUT}.",
     )
-    parser.add_argument("--zip", action="store_true", help="Create and validate TimeCapsuleSMB.app.zip next to the app bundle.")
+    parser.add_argument("--zip", action="store_true", help="Create and validate CappagePatch.app.zip next to the app bundle.")
     parser.add_argument("--zip-output", type=Path, help="Zip output path; implies --zip.")
     return parser.parse_args(argv)
 

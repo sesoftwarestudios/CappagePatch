@@ -2459,6 +2459,90 @@ describe_managed_smbd_status "" ""
         self.assertIn("PASS:mdns bound to required UDP 5353 listeners", result.lines)
         self.assertIn("PASS:Apple mDNSResponder is stopped", result.lines)
 
+    def test_probe_managed_mdns_takeover_verifies_enabled_older_mac_compatibility(self) -> None:
+        ps_out = (
+            "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser\n"
+            "321 1 S 0:00 afpserver /usr/sbin/afpserver\n"
+        )
+        fstat_out = "\n".join(
+            (
+                "root mdns-advertiser 123 4* internet dgram udp *:5353",
+                "root afpserver 321 5* internet stream tcp *:548",
+                "TC_SMB_ADVERTISED",
+                "TC_AFP_ADVERTISED",
+                "TC_AFP_ADISK_COMPATIBLE",
+            )
+        )
+        with mock.patch(
+            "timecapsulesmb.device.probe.run_ssh",
+            side_effect=[
+                mock.Mock(returncode=0, stdout="/mnt/Flash/mdns-advertiser\n", stderr=""),
+                mock.Mock(returncode=0, stdout=ps_out, stderr=""),
+                mock.Mock(returncode=0, stdout="ipv4\nTC_AFP_COMPAT_ENABLED\n", stderr=""),
+                mock.Mock(returncode=0, stdout=fstat_out, stderr=""),
+            ],
+        ) as run_ssh_mock:
+            result = probe_managed_mdns_takeover_conn(SshConnection("host", "pw", "-o foo"))
+
+        self.assertTrue(result.ready)
+        self.assertIn(
+            "PASS:older Mac compatibility: SMB remains advertised for modern macOS",
+            result.lines,
+        )
+        self.assertIn("PASS:older Mac compatibility: Apple AFP server is running", result.lines)
+        self.assertIn("PASS:older Mac compatibility: AFP is listening on TCP 548", result.lines)
+        self.assertIn("PASS:older Mac compatibility: AFP is advertised over Bonjour", result.lines)
+        self.assertIn("PASS:older Mac compatibility: Time Machine advertises AFP and SMB", result.lines)
+        remote_commands = [call.args[1] for call in run_ssh_mock.call_args_list]
+        self.assertIn("MDNS_ADVERTISE_AFP=0", remote_commands[2])
+        self.assertIn("/usr/bin/fstat -p 321", remote_commands[3])
+        self.assertIn("_smb._tcp.local.", remote_commands[3])
+        self.assertIn("_afpovertcp._tcp.local.", remote_commands[3])
+        self.assertIn("0x83", remote_commands[3])
+
+    def test_probe_managed_mdns_takeover_fails_when_enabled_afp_server_is_unavailable(self) -> None:
+        ps_out = "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser\n"
+        fstat_out = "\n".join(
+            (
+                "root mdns-advertiser 123 4* internet dgram udp *:5353",
+                "TC_SMB_NOT_ADVERTISED",
+                "TC_AFP_NOT_ADVERTISED",
+                "TC_AFP_ADISK_INCOMPATIBLE",
+            )
+        )
+        with mock.patch(
+            "timecapsulesmb.device.probe.run_ssh",
+            side_effect=[
+                mock.Mock(returncode=0, stdout="/mnt/Flash/mdns-advertiser\n", stderr=""),
+                mock.Mock(returncode=0, stdout=ps_out, stderr=""),
+                mock.Mock(returncode=0, stdout="ipv4\nTC_AFP_COMPAT_ENABLED\n", stderr=""),
+                mock.Mock(returncode=0, stdout=fstat_out, stderr=""),
+            ],
+        ):
+            result = probe_managed_mdns_takeover_conn(SshConnection("host", "pw", "-o foo"))
+
+        self.assertFalse(result.ready)
+        self.assertIn(
+            "FAIL:older Mac compatibility is enabled but SMB is not advertised for modern macOS",
+            result.lines,
+        )
+        self.assertIn(
+            "older Mac compatibility is enabled but Apple AFP server is not running",
+            result.detail,
+        )
+        self.assertIn(
+            "FAIL:older Mac compatibility is enabled but AFP is not listening on TCP 548",
+            result.lines,
+        )
+        self.assertIn(
+            "FAIL:older Mac compatibility is enabled but AFP is not advertised over Bonjour",
+            result.lines,
+        )
+        self.assertIn(
+            "FAIL:older Mac compatibility is enabled but Time Machine AFP metadata is missing",
+            result.lines,
+        )
+
     def test_probe_managed_mdns_takeover_retries_binary_probe_timeout_with_full_timeout(self) -> None:
         ps_out = "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser\n"
         fstat_out = "root mdns-advertiser 123 4* internet dgram udp *:5353\n"

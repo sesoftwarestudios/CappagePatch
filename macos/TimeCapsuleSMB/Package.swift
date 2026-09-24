@@ -12,11 +12,11 @@ let xcodeSwiftSettings: [SwiftSetting] = xcodeFrameworkFlags.isEmpty ? [] : [.un
 let xcodeLinkerSettings: [LinkerSetting] = xcodeFrameworkFlags.isEmpty ? [] : [.unsafeFlags(xcodeFrameworkFlags)]
 
 let package = Package(
-    name: "TimeCapsuleSMBMac",
+    name: "CappagePatchMac",
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "TimeCapsuleSMB", targets: ["TimeCapsuleSMBExecutable"]),
+        .executable(name: "CappagePatch", targets: ["TimeCapsuleSMBExecutable"]),
         .executable(name: "tcapsule", targets: ["TimeCapsuleSMBHelper"])
     ],
     targets: [

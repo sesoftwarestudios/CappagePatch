@@ -110,7 +110,8 @@ final class AppStore: ObservableObject {
         await refreshPasswordStates()
         appReadinessStore.start()
         deviceDiscovery.startMonitoring()
-        if appSettingsStore.settings.checkForUpdatesOnLaunch {
+        if appSettingsStore.settings.checkForUpdatesOnLaunch,
+           !appSettingsStore.settings.versionCheckURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             appUpdateStore.checkNow(settings: appSettingsStore.settings)
         }
     }
@@ -262,8 +263,12 @@ final class AppStore: ObservableObject {
         }
     }
 
-    private func readinessVersionCheck(for settings: AppSettings) -> AppReadinessVersionCheck {
-        AppReadinessVersionCheck(url: settings.versionCheckURL)
+    private func readinessVersionCheck(for settings: AppSettings) -> AppReadinessVersionCheck? {
+        let url = settings.versionCheckURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard settings.checkForUpdatesOnLaunch, !url.isEmpty else {
+            return nil
+        }
+        return AppReadinessVersionCheck(url: url)
     }
 
     private func syncTelemetryPreference(_ enabled: Bool) {

@@ -260,6 +260,10 @@ public struct ContentView: View {
 
     private var sidebar: some View {
         List(selection: sidebarSelection) {
+            BrandSidebarHeader()
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+
             Label(L10n.string("sidebar.all_airport_devices"), systemImage: "externaldrive.connected.to.line.below")
                 .tag(AppRoute.allDevices)
             Label(L10n.string("sidebar.activity"), systemImage: activityStore.hasActiveActivity ? "hourglass" : "clock")
@@ -291,7 +295,16 @@ public struct ContentView: View {
                     .tag(AppRoute.addDevice)
             }
         }
-        .navigationTitle("TimeCapsuleSMB")
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(
+            LinearGradient(
+                colors: [BrandPalette.deepNavy.opacity(0.10), BrandPalette.violet.opacity(0.04), .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .navigationTitle(AppBrand.displayName)
         .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
     }
 

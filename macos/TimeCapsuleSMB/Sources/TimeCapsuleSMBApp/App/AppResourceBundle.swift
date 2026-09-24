@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppResourceBundleLocator {
-    static let bundleDirectoryName = "TimeCapsuleSMBMac_TimeCapsuleSMBApp.bundle"
+    static let bundleDirectoryName = "CappagePatchMac_TimeCapsuleSMBApp.bundle"
 
     static func bundleURL(
         appBundleURL: URL = Bundle.main.bundleURL,

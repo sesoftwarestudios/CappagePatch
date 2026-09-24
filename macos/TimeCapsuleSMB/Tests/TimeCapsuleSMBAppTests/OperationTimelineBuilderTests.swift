@@ -105,7 +105,7 @@ final class OperationTimelineBuilderTests: XCTestCase {
         ])
         XCTAssertEqual(
             timeline.first?.detail,
-            "Checking whether the device will start TimeCapsuleSMB automatically."
+            "Checking whether the device will start CappagePatch automatically."
         )
         XCTAssertEqual(
             timeline[1].detail,
@@ -134,7 +134,7 @@ final class OperationTimelineBuilderTests: XCTestCase {
         XCTAssertEqual(timeline.map(\.title), ["Check Existing Runtime", "Let Runtime Settle"])
         XCTAssertEqual(
             timeline.first?.detail,
-            "Checking whether TimeCapsuleSMB is already running before activating it."
+            "Checking whether CappagePatch is already running before activating it."
         )
         XCTAssertEqual(
             timeline[1].detail,

@@ -21,12 +21,12 @@ def load_package_app_module():
 
 
 def create_fake_app_executable_and_resources(app: Path) -> None:
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     resource_bundle = (
         app
         / "Contents"
         / "Resources"
-        / "TimeCapsuleSMBMac_TimeCapsuleSMBApp.bundle"
+        / "CappagePatchMac_TimeCapsuleSMBApp.bundle"
         / "en.lproj"
     )
     executable.parent.mkdir(parents=True, exist_ok=True)
@@ -117,7 +117,7 @@ def test_assert_bundle_layout_checks_helper_python_tools_and_artifacts(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     python_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
@@ -149,7 +149,7 @@ def test_assert_bundle_layout_checks_helper_python_tools_and_artifacts(
 
 def test_assert_bundle_layout_requires_artifact_manifest(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     python_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
@@ -166,7 +166,7 @@ def test_assert_bundle_layout_requires_artifact_manifest(tmp_path: Path) -> None
 
 def test_assert_bundle_layout_requires_python_packages(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
     distribution = app / "Contents" / "Resources" / "Distribution"
@@ -182,9 +182,9 @@ def test_assert_bundle_layout_requires_python_packages(tmp_path: Path) -> None:
 
 def test_assert_bundle_layout_requires_swift_resource_bundle(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     python_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
     distribution = app / "Contents" / "Resources" / "Distribution"
@@ -210,7 +210,7 @@ def test_build_swift_creates_universal_binary_with_lipo(monkeypatch: pytest.Monk
         calls.append(cmd)
         if cmd[:2] == ["swift", "build"]:
             architecture = cmd[cmd.index("--triple") + 1].split("-", 1)[0]
-            executable = package_app.swift_build_dir("release", architecture) / "TimeCapsuleSMB"
+            executable = package_app.swift_build_dir("release", architecture) / "CappagePatch"
             executable.parent.mkdir(parents=True, exist_ok=True)
             executable.write_text(architecture, encoding="utf-8")
             executable.chmod(0o755)
@@ -224,7 +224,7 @@ def test_build_swift_creates_universal_binary_with_lipo(monkeypatch: pytest.Monk
 
     executable, resource_build_dir = package_app.build_swift("release", ("arm64", "x86_64"))
 
-    assert executable == tmp_path / ".build" / "package-app" / "release" / "TimeCapsuleSMB"
+    assert executable == tmp_path / ".build" / "package-app" / "release" / "CappagePatch"
     assert resource_build_dir == tmp_path / ".build" / "arm64-apple-macosx" / "release"
     assert ["lipo", "-create"] == calls[-1][:2]
 
@@ -307,6 +307,25 @@ def test_prune_python_runtime_removes_unused_gui_frameworks(tmp_path: Path) -> N
     assert not (dynload / "_tkinter.cpython-313-darwin.so").exists()
 
 
+def test_prune_python_runtime_handles_newer_python_stdlib_versions(tmp_path: Path) -> None:
+    package_app = load_package_app_module()
+    framework = tmp_path / "Python.framework"
+    version = framework / "Versions" / "3.14"
+    (version / "Python").parent.mkdir(parents=True)
+    (version / "Python").write_text("python", encoding="utf-8")
+    dynload = version / "lib" / "python3.14" / "lib-dynload"
+    dynload.mkdir(parents=True)
+    extension = dynload / "_tkinter.cpython-314-darwin.so"
+    extension.write_text("tk", encoding="utf-8")
+    (version / "lib" / "python3.14" / "tkinter").mkdir()
+    (framework / "Versions" / "Current").symlink_to(version)
+
+    package_app.prune_python_runtime(framework)
+
+    assert not extension.exists()
+    assert not (version / "lib" / "python3.14" / "tkinter").exists()
+
+
 def test_create_app_icon_reuses_cached_icns(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     package_app = load_package_app_module()
     monkeypatch.setattr(package_app, "PACKAGE_ROOT", tmp_path)
@@ -338,7 +357,7 @@ def test_create_app_icon_reuses_cached_icns(monkeypatch: pytest.MonkeyPatch, tmp
     package_app.create_app_icon(source, second_resources)
 
     assert calls == []
-    assert (second_resources / "TimeCapsuleSMB.icns").read_text(encoding="utf-8") == "icns"
+    assert (second_resources / "CappagePatch.icns").read_text(encoding="utf-8") == "icns"
 
 
 def test_prepared_python_framework_reuses_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -450,7 +469,7 @@ def test_remove_python_bytecode_removes_nested_pycache_and_orphans(tmp_path: Pat
 
 def test_remove_appledouble_files_removes_metadata_sidecars(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    root = tmp_path / "TimeCapsuleSMB.app"
+    root = tmp_path / "CappagePatch.app"
     normal = root / "Contents" / "Resources" / "Python"
     sidecar = root / "Contents" / "Resources" / "._Python"
     nested_sidecar_dir = root / "Contents" / "Resources" / "._Metadata"
@@ -469,12 +488,12 @@ def test_remove_appledouble_files_removes_metadata_sidecars(tmp_path: Path) -> N
 
 def test_assert_no_appledouble_files_reports_nested_sidecars(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    sidecar = tmp_path / "TimeCapsuleSMB.app" / "Contents" / "Resources" / "._Python"
+    sidecar = tmp_path / "CappagePatch.app" / "Contents" / "Resources" / "._Python"
     sidecar.parent.mkdir(parents=True)
     sidecar.write_text("appledouble", encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="AppleDouble metadata files"):
-        package_app.assert_no_appledouble_files(tmp_path / "TimeCapsuleSMB.app")
+        package_app.assert_no_appledouble_files(tmp_path / "CappagePatch.app")
 
 
 def test_create_python_packages_reuses_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -605,7 +624,7 @@ def test_package_args_do_not_allow_missing_bundled_tools(monkeypatch: pytest.Mon
 def test_copy_helper_executable_preserves_bundled_helper_path(tmp_path: Path) -> None:
     package_app = load_package_app_module()
     source = tmp_path / "build" / "tcapsule"
-    destination = tmp_path / "TimeCapsuleSMB.app" / "Contents" / "Helpers" / "tcapsule"
+    destination = tmp_path / "CappagePatch.app" / "Contents" / "Helpers" / "tcapsule"
     source.parent.mkdir(parents=True)
     source.write_text("mach-o helper", encoding="utf-8")
     source.chmod(0o644)
@@ -621,7 +640,7 @@ def test_assert_bundle_layout_requires_bundled_ca_certificates(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     python_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
@@ -643,7 +662,7 @@ def test_assert_bundle_layout_uses_full_macho_validation_only_when_requested(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     python_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
@@ -876,7 +895,7 @@ def test_vendor_macho_dependencies_rewrites_loader_path_to_matching_source_copy(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     tools = app / "Contents" / "Resources" / "Tools" / "bin"
     arm_tool = tools / "arm64" / "smbclient"
     x86_tool = tools / "x86_64" / "smbclient"
@@ -945,7 +964,7 @@ def test_ad_hoc_codesign_macho_bundle_signs_only_macho_files(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     macho = app / "Contents" / "Resources" / "Tools" / "bin" / "smbclient"
     script = tmp_path / "wrapper"
     macho.parent.mkdir(parents=True)
@@ -972,8 +991,8 @@ def test_ad_hoc_codesign_macho_bundle_does_not_sign_app_executable_as_nested_cod
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    app = tmp_path / "CappagePatch.app"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     library = app / "Contents" / "Frameworks" / "libtool.dylib"
     tool = app / "Contents" / "Resources" / "Tools" / "bin" / "smbclient"
     for path in (executable, library, tool):
@@ -997,7 +1016,7 @@ def test_ad_hoc_codesign_macho_bundle_signs_python_framework_last(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     python_binary = app / "Contents" / "Resources" / "Python" / "Runtime" / "Python.framework" / "Versions" / "3.13" / "Python"
     framework = app / "Contents" / "Resources" / "Python" / "Runtime" / "Python.framework"
     python_binary.parent.mkdir(parents=True)
@@ -1018,10 +1037,10 @@ def test_developer_id_codesign_app_bundle_signs_nested_code_framework_and_app(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     library = app / "Contents" / "Frameworks" / "libtool.dylib"
     tool = app / "Contents" / "Resources" / "Tools" / "bin" / "smbclient"
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     framework = app / "Contents" / "Resources" / "Python" / "Runtime" / "Python.framework"
     for path in (library, tool, executable, framework / "Versions" / "3.13" / "Python"):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1052,7 +1071,7 @@ def test_assert_macho_code_signatures_valid_reports_invalid_signature(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     macho = app / "Contents" / "Resources" / "Tools" / "bin" / "smbclient"
     macho.parent.mkdir(parents=True)
     macho.write_text("macho", encoding="utf-8")
@@ -1074,7 +1093,7 @@ def test_assert_app_bundle_signature_valid_reports_codesign_failure(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
 
     def fake_run(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
         assert cmd[:5] == ["codesign", "--verify", "--deep", "--strict", "--verbose=4"]
@@ -1091,8 +1110,8 @@ def test_create_app_zip_uses_metadata_free_archive_and_validates_unzip(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
-    zip_path = tmp_path / "dist" / "TimeCapsuleSMB.app.zip"
+    app = tmp_path / "CappagePatch.app"
+    zip_path = tmp_path / "dist" / "CappagePatch.app.zip"
     app.mkdir()
     calls: list[list[str]] = []
     verified: list[Path] = []
@@ -1118,7 +1137,7 @@ def test_create_app_zip_uses_metadata_free_archive_and_validates_unzip(
     assert "--noacl" in calls[0]
     assert "--noqtn" in calls[0]
     assert calls[1][:2] == ["unzip", "-q"]
-    assert verified and verified[0].name == "TimeCapsuleSMB.app"
+    assert verified and verified[0].name == "CappagePatch.app"
 
 
 def test_validate_app_zip_rejects_root_appledouble_sidecar(
@@ -1126,21 +1145,21 @@ def test_validate_app_zip_rejects_root_appledouble_sidecar(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    zip_path = tmp_path / "TimeCapsuleSMB.app.zip"
+    zip_path = tmp_path / "CappagePatch.app.zip"
     zip_path.write_bytes(b"zip")
 
     def fake_run(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
         assert cmd[:2] == ["unzip", "-q"]
         extract_dir = Path(cmd[-1])
-        (extract_dir / "TimeCapsuleSMB.app").mkdir()
-        (extract_dir / "._TimeCapsuleSMB.app").write_text("appledouble", encoding="utf-8")
+        (extract_dir / "CappagePatch.app").mkdir()
+        (extract_dir / "._CappagePatch.app").write_text("appledouble", encoding="utf-8")
         return subprocess.CompletedProcess(cmd, 0)
 
     monkeypatch.setattr(package_app, "run", fake_run)
     monkeypatch.setattr(package_app, "assert_app_bundle_signature_valid", lambda app: None)
 
     with pytest.raises(RuntimeError, match="AppleDouble metadata files"):
-        package_app.validate_app_zip(zip_path, "TimeCapsuleSMB.app")
+        package_app.validate_app_zip(zip_path, "CappagePatch.app")
 
 
 def test_notarize_archive_requires_accepted_status(
@@ -1148,7 +1167,7 @@ def test_notarize_archive_requires_accepted_status(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    archive = tmp_path / "TimeCapsuleSMB-notary.zip"
+    archive = tmp_path / "CappagePatch-notary.zip"
     archive.write_bytes(b"zip")
     calls: list[list[str]] = []
 
@@ -1175,7 +1194,7 @@ def test_notarize_archive_returns_submission_id_on_accept(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    archive = tmp_path / "TimeCapsuleSMB-notary.zip"
+    archive = tmp_path / "CappagePatch-notary.zip"
     archive.write_bytes(b"zip")
 
     def fake_run_quiet(cmd: list[str]) -> subprocess.CompletedProcess[str]:
@@ -1196,7 +1215,7 @@ def test_ad_hoc_codesign_app_bundle_signs_helper_before_app(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     helper = app / "Contents" / "Helpers" / "tcapsule"
     helper.parent.mkdir(parents=True)
     helper.write_text("#!/bin/sh\n", encoding="utf-8")
@@ -1215,7 +1234,7 @@ def test_package_app_signs_final_bundle_after_native_tools(
 ) -> None:
     package_app = load_package_app_module()
     monkeypatch.setattr(package_app, "PACKAGE_ROOT", tmp_path)
-    executable = tmp_path / "swift-build" / "TimeCapsuleSMB"
+    executable = tmp_path / "swift-build" / "CappagePatch"
     helper_executable = tmp_path / "swift-build" / "tcapsule"
     resource_build_dir = tmp_path / "swift-build"
     executable.parent.mkdir(parents=True)
@@ -1260,7 +1279,7 @@ def test_package_app_signs_final_bundle_after_native_tools(
     result = package_app.package_app(args)
 
     assert calls[-6:] == ["native", "clean", "assert-clean", "app-sign", "app-verify", "assert"]
-    assert result.app == tmp_path / "dist" / "TimeCapsuleSMB.app"
+    assert result.app == tmp_path / "dist" / "CappagePatch.app"
     assert result.zip_path is None
     assert result.notarization_archive is None
 
@@ -1271,7 +1290,7 @@ def test_package_app_result_includes_zip_and_notarization_archive(
 ) -> None:
     package_app = load_package_app_module()
     monkeypatch.setattr(package_app, "PACKAGE_ROOT", tmp_path)
-    executable = tmp_path / "swift-build" / "TimeCapsuleSMB"
+    executable = tmp_path / "swift-build" / "CappagePatch"
     helper_executable = tmp_path / "swift-build" / "tcapsule"
     resource_build_dir = tmp_path / "swift-build"
     executable.parent.mkdir(parents=True)
@@ -1317,9 +1336,9 @@ def test_package_app_result_includes_zip_and_notarization_archive(
 
     result = package_app.package_app(args)
 
-    assert result.app == tmp_path / "dist" / "TimeCapsuleSMB.app"
-    assert result.notarization_archive == tmp_path / "dist" / "TimeCapsuleSMB-notary.zip"
-    assert result.zip_path == tmp_path / "dist" / "TimeCapsuleSMB.app.zip"
+    assert result.app == tmp_path / "dist" / "CappagePatch.app"
+    assert result.notarization_archive == tmp_path / "dist" / "CappagePatch-notary.zip"
+    assert result.zip_path == tmp_path / "dist" / "CappagePatch.app.zip"
 
 
 def test_main_prints_labeled_artifact_paths(
@@ -1329,9 +1348,9 @@ def test_main_prints_labeled_artifact_paths(
 ) -> None:
     package_app = load_package_app_module()
     result = package_app.PackageResult(
-        app=tmp_path / "TimeCapsuleSMB.app",
-        notarization_archive=tmp_path / "TimeCapsuleSMB-notary.zip",
-        zip_path=tmp_path / "TimeCapsuleSMB.app.zip",
+        app=tmp_path / "CappagePatch.app",
+        notarization_archive=tmp_path / "CappagePatch-notary.zip",
+        zip_path=tmp_path / "CappagePatch.app.zip",
     )
     monkeypatch.setattr(package_app, "package_app", lambda args: result)
 
@@ -1379,8 +1398,8 @@ def test_runtime_macho_architecture_validation_checks_internal_dependencies(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    app = tmp_path / "CappagePatch.app"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     dependency = app / "Contents" / "Frameworks" / "libtool.dylib"
     executable.parent.mkdir(parents=True)
     dependency.parent.mkdir(parents=True)
@@ -1411,7 +1430,7 @@ def test_runtime_macho_architecture_validation_checks_helper(
     tmp_path: Path,
 ) -> None:
     package_app = load_package_app_module()
-    helper = tmp_path / "TimeCapsuleSMB.app" / "Contents" / "Helpers" / "tcapsule"
+    helper = tmp_path / "CappagePatch.app" / "Contents" / "Helpers" / "tcapsule"
     helper.parent.mkdir(parents=True)
     helper.write_text("helper", encoding="utf-8")
 
@@ -1424,7 +1443,7 @@ def test_runtime_macho_architecture_validation_checks_helper(
     monkeypatch.setattr(package_app, "macho_dependencies", lambda path: [])
 
     with pytest.raises(RuntimeError, match=r"tcapsule: missing x86_64"):
-        package_app.assert_runtime_macho_architectures(tmp_path / "TimeCapsuleSMB.app", ("arm64", "x86_64"))
+        package_app.assert_runtime_macho_architectures(tmp_path / "CappagePatch.app", ("arm64", "x86_64"))
 
 
 def test_python_dependency_validation_uses_bundled_python(
@@ -1433,7 +1452,7 @@ def test_python_dependency_validation_uses_bundled_python(
 ) -> None:
     package_app = load_package_app_module()
     monkeypatch.setattr(package_app, "PACKAGE_ROOT", tmp_path)
-    app = tmp_path / "TimeCapsuleSMB.app"
+    app = tmp_path / "CappagePatch.app"
     create_fake_app_executable_and_resources(app)
     site_packages = app / "Contents" / "Resources" / "Python" / "site-packages"
     site_packages.mkdir(parents=True)
@@ -1459,8 +1478,8 @@ def test_python_dependency_validation_uses_bundled_python(
 
 def test_validate_app_resources_rejects_swift_resource_bundle_crash(tmp_path: Path) -> None:
     package_app = load_package_app_module()
-    app = tmp_path / "TimeCapsuleSMB.app"
-    executable = app / "Contents" / "MacOS" / "TimeCapsuleSMB"
+    app = tmp_path / "CappagePatch.app"
+    executable = app / "Contents" / "MacOS" / "CappagePatch"
     executable.parent.mkdir(parents=True)
     executable.write_text("#!/bin/sh\necho resource crash >&2\nexit 70\n", encoding="utf-8")
     executable.chmod(0o755)

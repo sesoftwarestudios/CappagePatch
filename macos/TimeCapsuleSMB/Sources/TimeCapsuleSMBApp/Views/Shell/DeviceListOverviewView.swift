@@ -7,82 +7,121 @@ struct DeviceListOverviewView: View {
     @ObservedObject var backend: BackendClient
     let addDiscoveredDevice: (DiscoveredDevice) -> Void
 
+    private let deviceColumns = [
+        GridItem(.adaptive(minimum: 280, maximum: 420), spacing: 14, alignment: .top)
+    ]
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 22) {
+                hero
                 savedDevicesSection
                 discoverySection
             }
-            .padding()
+            .padding(24)
             .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .background(
+            LinearGradient(
+                colors: [BrandPalette.deepNavy.opacity(0.06), .clear],
+                startPoint: .topLeading,
+                endPoint: .center
+            )
+        )
+    }
+
+    private var hero: some View {
+        BrandHero(
+            eyebrow: "Control center",
+            title: "Your backup network",
+            message: AppBrand.shortDescription
+        ) {
+            HStack(spacing: 22) {
+                BrandMetric(
+                    value: "\(deviceRegistry.profiles.count)",
+                    label: "Managed",
+                    systemImage: "externaldrive.fill"
+                )
+                BrandMetric(
+                    value: "\(deviceDiscovery.unsavedDevices.count)",
+                    label: "Nearby",
+                    systemImage: "antenna.radiowaves.left.and.right"
+                )
+            }
         }
     }
 
     @ViewBuilder
     private var savedDevicesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(deviceRegistry.profiles.isEmpty
-                ? L10n.string("overview.empty.title")
-                : L10n.string("overview.saved_devices.title"))
-            .font(.title2.weight(.semibold))
+            HStack {
+                Text(deviceRegistry.profiles.isEmpty
+                    ? L10n.string("overview.empty.title")
+                    : L10n.string("overview.saved_devices.title"))
+                    .font(.title2.weight(.semibold))
+                Spacer()
+                Button {
+                    appStore.showAddDevice()
+                } label: {
+                    Label(L10n.string("sidebar.add_airport_device"), systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BrandPalette.violet)
+            }
 
             if deviceRegistry.profiles.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(L10n.string("overview.empty.message"))
-                        .foregroundStyle(.secondary)
-                    Button {
-                        appStore.showAddDevice()
-                    } label: {
-                        Label(L10n.string("sidebar.add_airport_device"), systemImage: "plus.circle")
+                BrandPanel {
+                    HStack(spacing: 16) {
+                        Image(systemName: "externaldrive.badge.plus")
+                            .font(.system(size: 30, weight: .medium))
+                            .foregroundStyle(BrandPalette.accentGradient)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Connect your first backup appliance")
+                                .font(.headline)
+                            Text(L10n.string("overview.empty.message"))
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
                     }
                 }
             } else {
-                ForEach(deviceRegistry.profiles) { profile in
-                    let summary = appStore.dashboardSummary(for: profile)
-                    Button {
-                        appStore.select(profile)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(profile.title)
-                                    .font(.body.weight(.medium))
-                                Text(profile.addressSummary.isEmpty ? profile.displayTarget : profile.addressSummary)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Label(summary.displayStatus.title, systemImage: summary.displayStatus.systemImage)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                LazyVGrid(columns: deviceColumns, alignment: .leading, spacing: 14) {
+                    ForEach(deviceRegistry.profiles) { profile in
+                        OverviewDeviceCard(
+                            profile: profile,
+                            summary: appStore.dashboardSummary(for: profile),
+                            lastSeenText: deviceDiscovery.lastSeenText(for: profile)
+                        ) {
+                            appStore.select(profile)
                         }
                     }
-                    .buttonStyle(.plain)
-                    Divider()
                 }
             }
         }
     }
 
     private var discoverySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(L10n.string("overview.discovery.title"))
-                    .font(.headline)
-                Spacer()
-                Text(deviceDiscovery.state.title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button {
-                    deviceDiscovery.refresh()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
+        BrandPanel {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label(L10n.string("overview.discovery.title"), systemImage: "dot.radiowaves.left.and.right")
+                        .font(.headline)
+                    Spacer()
+                    Text(deviceDiscovery.state.title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Button {
+                        deviceDiscovery.refresh()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(backend.isRunning)
+                    .help(L10n.string("overview.discovery.refresh"))
                 }
-                .buttonStyle(.borderless)
-                .disabled(backend.isRunning)
-                .help(L10n.string("overview.discovery.refresh"))
-            }
 
-            discoveryContent
+                discoveryContent
+            }
         }
     }
 
@@ -140,6 +179,84 @@ struct DeviceListOverviewView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private struct OverviewDeviceCard: View {
+    let profile: DeviceProfile
+    let summary: DeviceDashboardSummary
+    let lastSeenText: String?
+    let open: () -> Void
+
+    var body: some View {
+        Button(action: open) {
+            BrandPanel {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(alignment: .top) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(statusColor.opacity(0.12))
+                            Image(systemName: "externaldrive.fill")
+                                .font(.title2)
+                                .foregroundStyle(statusColor)
+                        }
+                        .frame(width: 46, height: 46)
+
+                        Spacer()
+
+                        Label(summary.displayStatus.title, systemImage: summary.displayStatus.systemImage)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(statusColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 5)
+                            .background(statusColor.opacity(0.10), in: Capsule())
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(profile.title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(profile.model ?? profile.displayTarget)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Divider()
+
+                    HStack {
+                        Label(
+                            profile.addressSummary.isEmpty ? profile.displayTarget : profile.addressSummary,
+                            systemImage: "network"
+                        )
+                        .lineLimit(1)
+                        Spacer()
+                        if let lastSeenText {
+                            Text(lastSeenText)
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var statusColor: Color {
+        switch summary.displayStatus {
+        case .healthy:
+            return .green
+        case .warning, .activationNeeded:
+            return BrandPalette.amber
+        case .failed, .passwordInvalid, .keychainUnavailable, .offline, .unsupported:
+            return .red
+        case .installing, .checking, .maintaining, .readyToInstall:
+            return BrandPalette.teal
+        default:
+            return .secondary
         }
     }
 }

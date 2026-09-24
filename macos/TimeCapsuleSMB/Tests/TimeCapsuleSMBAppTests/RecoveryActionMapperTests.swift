@@ -253,7 +253,7 @@ final class RecoveryActionMapperTests: XCTestCase {
         XCTAssertEqual(english.title, "AirPort not reachable at this address")
         XCTAssertEqual(
             english.detail,
-            "TimeCapsuleSMB could not reach the AirPort ACP service before enabling SSH. Backups or AirPort Utility may still work even when ACP is blocked."
+            "CappagePatch could not reach the AirPort ACP service before enabling SSH. Backups or AirPort Utility may still work even when ACP is blocked."
         )
         XCTAssertEqual(english.steps[0], "Disable VPN or security software that routes local network traffic, then try again.")
         XCTAssertEqual(english.steps.count, 4)
