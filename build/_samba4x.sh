@@ -778,6 +778,18 @@ install_samba4x_target_gmp() {
         return 1
     fi
 
+    # Nettle 3.10 requires the public GMP 6.1+ low-level API.  NetBSD 7's
+    # in-tree archive can be present alongside a newer generated header while
+    # still lacking __gmpn_zero_p.  Copying that mismatched pair makes Nettle
+    # silently omit Hogweed and only surfaces later as a misleading GnuTLS
+    # "Libnettle was not found" configure failure.  Verify the archive itself
+    # before selecting it; the bundled GMP fallback below is deterministic.
+    if ! "$TOOLDIR/bin/$TRIPLE-nm" -g "$gmp_lib" 2>/dev/null | \
+        awk '{print $NF}' | grep -Fx '__gmpn_zero_p' >/dev/null 2>&1; then
+        echo "NetBSD target GMP lacks __gmpn_zero_p; using bundled GMP $SAMBA4X_GMP_VERSION."
+        return 1
+    fi
+
     mkdir -p "$SAMBA4X_DEPS/lib" "$SAMBA4X_DEPS/include" "$SAMBA4X_DEPS/lib/pkgconfig"
     cp "$gmp_lib" "$SAMBA4X_DEPS/lib/libgmp.a"
     cp "$gmp_header" "$SAMBA4X_DEPS/include/gmp.h"
@@ -850,7 +862,7 @@ EOF
 }
 
 build_samba4x_nettle() {
-    stamp="$SAMBA4X_DEPS/.stamp-nettle-$SAMBA4X_NETTLE_VERSION-system-gmp"
+    stamp="$SAMBA4X_DEPS/.stamp-nettle-$SAMBA4X_NETTLE_VERSION-$SAMBA4X_GMP_SOURCE-gmp"
     if [ -f "$stamp" ] &&
        [ -f "$SAMBA4X_DEPS/lib/libnettle.a" ] &&
        [ -f "$SAMBA4X_DEPS/lib/libhogweed.a" ]; then
@@ -972,9 +984,11 @@ build_samba4x_gnutls() {
 prepare_samba4x_deps() {
     echo "Preparing Samba4X static dependencies under $SAMBA4X_DEPS"
     mkdir -p "$SAMBA4X_DEPS" "$SAMBA4X_DEPS/lib" "$SAMBA4X_DEPS/include" "$SAMBA4X_DEPS/lib/pkgconfig"
+    SAMBA4X_GMP_SOURCE=system
     if install_samba4x_target_gmp; then
         echo "Using NetBSD target GMP from $OBJ"
     else
+        SAMBA4X_GMP_SOURCE=bundled
         echo "NetBSD target GMP is unavailable; building GMP $SAMBA4X_GMP_VERSION."
         build_samba4x_gmp
     fi

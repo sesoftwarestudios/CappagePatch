@@ -142,8 +142,22 @@ class Samba4XBuildScriptTests(unittest.TestCase):
                 """
             ),
         )
+        self.make_executable(
+            tools / f"{triple}-nm",
+            "#!/bin/sh\nprintf '00000000 T __gmpn_zero_p\\n'\n",
+        )
         for name in ("ar", "ranlib", "readelf", "strip"):
             self.make_executable(tools / f"{triple}-{name}", "#!/bin/sh\nexit 0\n")
+
+    def test_build_script_rejects_incompatible_netbsd_gmp_archive(self) -> None:
+        script = (REPO_ROOT / "build/_samba4x.sh").read_text()
+
+        self.assertIn("grep -Fx '__gmpn_zero_p'", script)
+        self.assertIn("SAMBA4X_GMP_SOURCE=bundled", script)
+        self.assertIn(
+            ".stamp-nettle-$SAMBA4X_NETTLE_VERSION-$SAMBA4X_GMP_SOURCE-gmp",
+            script,
+        )
 
     def prepare_fake_samba_source(self, src_dir: Path) -> None:
         self.make_file(src_dir / "source3/modules/wscript_build", "# fixture\n")
