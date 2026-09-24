@@ -13,6 +13,33 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 class Samba4XBuildScriptTests(unittest.TestCase):
+    def test_no_pthread_fork_patch_resets_talloc_before_child_allocations(self) -> None:
+        patch = (
+            REPO_ROOT
+            / "build/patches/samba4x/0022-no-pthread-talloc-stack-fork-exit-cleanup.patch"
+        ).read_text()
+
+        self.assertIn("+static pid_t global_ts_pid;", patch)
+        self.assertIn(
+            "+\tif (global_ts == NULL || global_ts_pid == getpid()) {", patch
+        )
+
+        accept_child = patch.split(
+            "diff --git a/source3/smbd/server.c b/source3/smbd/server.c", 1
+        )[1].split("diff --git a/source3/smbd/server_exit.c", 1)[0]
+        self.assertLess(
+            accept_child.index("+\t\ttalloc_stackframe_reinit_after_fork();"),
+            accept_child.index(" \t\t\tquic_tlsp = talloc_move(talloc_tos(),"),
+        )
+
+        reinit_child = patch.split(
+            "NTSTATUS smbd_reinit_after_fork(struct messaging_context *msg_ctx,", 1
+        )[1].split("diff --git a/source3/modules/vfs_aio_fork.c", 1)[0]
+        self.assertLess(
+            reinit_child.index("+\ttalloc_stackframe_reinit_after_fork();"),
+            reinit_child.index(" \tret = reinit_after_fork(msg_ctx, ev_ctx, parent_longlived);"),
+        )
+
     def test_build_env_example_selects_the_current_samba_source(self) -> None:
         result = subprocess.run(
             [

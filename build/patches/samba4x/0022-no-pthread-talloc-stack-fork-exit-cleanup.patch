@@ -1,8 +1,16 @@
 diff --git a/lib/util/talloc_stack.c b/lib/util/talloc_stack.c
-index 0148b11..5f62932 100644
+index fbad185..93ce38a 100644
 --- a/lib/util/talloc_stack.c
 +++ b/lib/util/talloc_stack.c
-@@ -92,7 +92,9 @@ static void talloc_stackframe_init(void)
+@@ -56,6 +56,7 @@ static pthread_once_t ts_initialized = PTHREAD_ONCE_INIT;
+ static pthread_key_t ts_key;
+ #else /* ! HAVE_PTHREAD */
+ static struct talloc_stackframe *global_ts;
++static pid_t global_ts_pid;
+ #endif
+ 
+ static void talloc_stackframe_destructor(void *ptr)
+@@ -92,7 +93,9 @@ static void talloc_stackframe_init(void)
  #else /* ! HAVE_PTHREAD */
  static void talloc_stackframe_atexit(void)
  {
@@ -13,7 +21,13 @@ index 0148b11..5f62932 100644
  }
  
  static void talloc_stackframe_init(void)
-@@ -159,6 +161,45 @@ static struct talloc_stackframe *talloc_stackframe_get(void)
+@@ -151,11 +154,57 @@ static struct talloc_stackframe *talloc_stackframe_get(void)
+ 	SMB_ASSERT(ret == 0);
+ #else /* ! HAVE_PTHREAD */
+ 	global_ts = ts;
++	global_ts_pid = getpid();
+ #endif
+ 
  	return ts;
  }
  
@@ -30,9 +44,15 @@ index 0148b11..5f62932 100644
 +	 * Drop only the stack tracking. The copied parent allocations are
 +	 * process-private after fork and will be reclaimed when the child
 +	 * exits. Code that later needs a talloc stack will create a fresh one
-+	 * in the child.
++	 * in the child. The PID guard keeps repeated reinitialization calls from
++	 * discarding a stack that this child has already created for itself.
 +	 */
++	if (global_ts == NULL || global_ts_pid == getpid()) {
++		return;
++	}
++
 +	global_ts = NULL;
++	global_ts_pid = 0;
 +#endif
 +}
 +
@@ -73,6 +93,27 @@ index 89bf6ab..1f81655 100644
  /*
   * return true if a talloc stackframe exists
   * this can be used to prevent memory leaks for code that can
+diff --git a/source3/smbd/server.c b/source3/smbd/server.c
+--- a/source3/smbd/server.c
++++ b/source3/smbd/server.c
+@@ -1381,9 +1381,17 @@ static void smbd_accept_connection(struct tevent_context *ev,
+ 	if (pid == 0) {
+ 		enum smb_transport_type transport_type = s->transport.type;
+ 		struct tstream_tls_params *quic_tlsp = NULL;
+ 		struct ssaddr_buf buf;
+ 		NTSTATUS status = NT_STATUS_OK;
+ 
++		/*
++		 * This fork copied the parent event loop's active talloc stack.
++		 * Reset that bookkeeping before talloc_move() or
++		 * talloc_free(s->parent) can run a parent-side stack destructor
++		 * in the child.
++		 */
++		talloc_stackframe_reinit_after_fork();
++
+ 		if (transport_type == SMB_TRANSPORT_TYPE_QUIC) {
+ 			quic_tlsp = talloc_move(talloc_tos(),
+ 						&s->parent->quic_tlsp);
 diff --git a/source3/smbd/server_exit.c b/source3/smbd/server_exit.c
 index 0944b5c..97a7770 100644
 --- a/source3/smbd/server_exit.c
@@ -86,19 +127,17 @@ index 0944b5c..97a7770 100644
 +	talloc_stackframe_cleanup_for_exit();
  	exit(0);
  }
-@@ -257,6 +258,14 @@ NTSTATUS smbd_reinit_after_fork(struct messaging_context *msg_ctx,
+@@ -257,6 +258,12 @@ NTSTATUS smbd_reinit_after_fork(struct messaging_context *msg_ctx,
  	NTSTATUS ret;
  	am_parent = NULL;
- 	ret = reinit_after_fork(msg_ctx, ev_ctx, parent_longlived);
- 	initialize_password_db(true, ev_ctx);
 +	/*
-+	 * In the static no-pthread appliance build, the talloc stack is
-+	 * process-global and was copied from the parent across fork. Drop that
-+	 * inherited tracking after the generic fork reinit has finished, before
-+	 * the child enters request handling and installs its own tevent trace
-+	 * stackframes.
++	 * The static no-pthread appliance build copied the parent's active
++	 * process-global talloc stack. Generic fork reinitialization allocates
++	 * memory, so the inherited bookkeeping must be dropped first.
 +	 */
 +	talloc_stackframe_reinit_after_fork();
+ 	ret = reinit_after_fork(msg_ctx, ev_ctx, parent_longlived);
+ 	initialize_password_db(true, ev_ctx);
  	return ret;
  }
 diff --git a/source3/modules/vfs_aio_fork.c b/source3/modules/vfs_aio_fork.c

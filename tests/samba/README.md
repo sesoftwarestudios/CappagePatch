@@ -39,10 +39,12 @@ space. The runner refuses other locations, and the cross-exec helper verifies
 that `/Volumes/...` is a distinct mounted filesystem before every upload and
 removes each temporary executable afterward.
 
-The cases cover talloc isolation through the real AIO fork path, preservation of
-worker errors, successful and failed synchronous fallback, worker limits and
-share isolation, FIFO saturation, cancellation, worker failure recovery and idle
-cleanup. Durable tests cover live-to-disconnected transition, bounded retry
+The cases cover talloc isolation through the real AIO fork path, including an
+idempotent second child reinitialization that preserves a newly-created child
+stack, preservation of worker errors, successful and failed synchronous
+fallback, worker limits and share isolation, FIFO saturation, cancellation,
+worker failure recovery and idle cleanup. Durable tests cover live-to-disconnected
+transition, bounded retry
 exhaustion, unlocked waiting and identity/ownership rejection. They do not assert
 the literal retry limit of 34.
 

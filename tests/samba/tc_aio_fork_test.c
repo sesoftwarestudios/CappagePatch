@@ -40,6 +40,7 @@ static struct files_struct *check_child_stack(struct smbd_server_connection *sco
 	struct files_struct *(*fn)(struct files_struct *, void *), void *data)
 {
 	TALLOC_CTX *frame;
+	TALLOC_CTX *tos;
 	(void)sconn; (void)fn; (void)data;
 	alarm(15);
 	/* Called by create_aio_child after its actual fork/reset path. */
@@ -47,6 +48,11 @@ static struct files_struct *check_child_stack(struct smbd_server_connection *sco
 	CHECK(destructors == 0);
 	frame = talloc_stackframe();
 	CHECK(talloc_stackframe_exists());
+	tos = talloc_tos();
+	/* A later generic child reinit must not discard this child's new stack. */
+	talloc_stackframe_reinit_after_fork();
+	CHECK(talloc_stackframe_exists());
+	CHECK(talloc_tos() == tos);
 	TALLOC_FREE(frame);
 	CHECK(!talloc_stackframe_exists() && destructors == 0);
 	return NULL;

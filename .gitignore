@@ -44,6 +44,12 @@ coverage.xml
 .ruff_cache/
 .pytype/
 
+# Local SMB/Time Machine diagnostic captures (may contain private metadata)
+/diagnostics/
+
+# Local cross-build VMs and disposable compiler worktrees
+/work/
+
 # Editor / IDE
 .idea/
 .vscode/
