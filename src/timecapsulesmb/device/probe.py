@@ -1278,6 +1278,19 @@ def _parse_live_pids_for_ucomm(ps_out: str, ucomm: str) -> tuple[str, ...]:
     return tuple(pids)
 
 
+def _parse_live_commands_for_ucomm(ps_out: str, ucomm: str) -> tuple[str, ...]:
+    commands: list[str] = []
+    for raw_line in ps_out.splitlines():
+        fields = raw_line.split(None, 5)
+        if len(fields) < 6:
+            continue
+        _pid, _ppid, stat, _time_field, proc_ucomm, command = fields
+        if stat.startswith("Z") or proc_ucomm != ucomm:
+            continue
+        commands.append(command)
+    return tuple(commands)
+
+
 def _process_present_for_ucomm(ps_out: str, ucomm: str) -> bool:
     return bool(_parse_live_pids_for_ucomm(ps_out, ucomm))
 
@@ -1473,21 +1486,24 @@ exit "$families_status"
         return _readiness_result_from_steps(ready=False, steps=steps, default_detail="managed mDNS takeover not active")
 
     afp_pids = _parse_live_pids_for_ucomm(ps_out, "afpserver") if legacy_afp_enabled else ()
+    mdns_commands = _parse_live_commands_for_ucomm(ps_out, "mdns-advertiser")
+    mdns_advertises_smb = any("--diskless" not in command.split() for command in mdns_commands)
+    mdns_advertises_afp = any("--afp" in command.split() for command in mdns_commands)
     fstat_pids = (*mdns_pids, *afp_pids)
     fstat_script = "if [ ! -x /usr/bin/fstat ]; then echo fstat_missing; exit 127; fi; " + " ".join(
         f"/usr/bin/fstat -p {pid} 2>/dev/null || true;" for pid in fstat_pids
     )
     if legacy_afp_enabled:
         fstat_script += (
-            " if /usr/bin/grep -F 'serving service: type=_smb._tcp.local.' "
-            "/mnt/Memory/samba4/var/mdns.log >/dev/null 2>&1; then "
-            "echo TC_SMB_ADVERTISED; else echo TC_SMB_NOT_ADVERTISED; fi;"
-            " if /usr/bin/grep -F 'serving service: type=_afpovertcp._tcp.local.' "
-            "/mnt/Memory/samba4/var/mdns.log >/dev/null 2>&1; then "
-            "echo TC_AFP_ADVERTISED; else echo TC_AFP_NOT_ADVERTISED; fi;"
-            " if /usr/bin/grep \"$(printf '\\t')0x83$\" "
-            "/mnt/Memory/samba4/var/adisk.tsv >/dev/null 2>&1; then "
-            "echo TC_AFP_ADISK_COMPATIBLE; else echo TC_AFP_ADISK_INCOMPATIBLE; fi;"
+            " tc_afp_adisk_compatible=0;"
+            " tc_tab=$(printf '\\t');"
+            " if [ -r /mnt/Memory/samba4/var/adisk.tsv ]; then"
+            " while IFS=\"$tc_tab\" read -r tc_share tc_disk_key tc_uuid tc_advf tc_extra; do"
+            " case \"$tc_advf\" in 0x83|0X83) tc_afp_adisk_compatible=1; break ;; esac;"
+            " done </mnt/Memory/samba4/var/adisk.tsv;"
+            " fi;"
+            " if [ \"$tc_afp_adisk_compatible\" -eq 1 ]; then"
+            " echo TC_AFP_ADISK_COMPATIBLE; else echo TC_AFP_ADISK_INCOMPATIBLE; fi;"
         )
     fstat_step, fstat_proc = _run_timed_probe_step(
         connection,
@@ -1510,7 +1526,7 @@ exit "$families_status"
         _append_step(steps, "mdns_udp_5353", "fail", "mdns is not bound to required UDP 5353 listener")
 
     if legacy_afp_enabled:
-        if "TC_SMB_ADVERTISED" in fstat_out.splitlines():
+        if mdns_advertises_smb:
             _append_step(
                 steps,
                 "legacy_modern_smb_bonjour",
@@ -1552,7 +1568,7 @@ exit "$families_status"
                 "fail",
                 "older Mac compatibility is enabled but AFP is not listening on TCP 548",
             )
-        if "TC_AFP_ADVERTISED" in fstat_out.splitlines():
+        if mdns_advertises_afp:
             _append_step(
                 steps,
                 "legacy_afp_bonjour",

@@ -2461,15 +2461,14 @@ describe_managed_smbd_status "" ""
 
     def test_probe_managed_mdns_takeover_verifies_enabled_older_mac_compatibility(self) -> None:
         ps_out = (
-            "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser\n"
+            "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser --instance TimeCap --afp "
+            "--adisk-shares-file /mnt/Memory/samba4/var/adisk.tsv --auto-ip\n"
             "321 1 S 0:00 afpserver /usr/sbin/afpserver\n"
         )
         fstat_out = "\n".join(
             (
                 "root mdns-advertiser 123 4* internet dgram udp *:5353",
                 "root afpserver 321 5* internet stream tcp *:548",
-                "TC_SMB_ADVERTISED",
-                "TC_AFP_ADVERTISED",
                 "TC_AFP_ADISK_COMPATIBLE",
             )
         )
@@ -2496,17 +2495,15 @@ describe_managed_smbd_status "" ""
         remote_commands = [call.args[1] for call in run_ssh_mock.call_args_list]
         self.assertIn("MDNS_ADVERTISE_AFP=0", remote_commands[2])
         self.assertIn("/usr/bin/fstat -p 321", remote_commands[3])
-        self.assertIn("_smb._tcp.local.", remote_commands[3])
-        self.assertIn("_afpovertcp._tcp.local.", remote_commands[3])
+        self.assertNotIn("/usr/bin/grep", remote_commands[3])
+        self.assertIn("while IFS=\"$tc_tab\" read -r", remote_commands[3])
         self.assertIn("0x83", remote_commands[3])
 
     def test_probe_managed_mdns_takeover_fails_when_enabled_afp_server_is_unavailable(self) -> None:
-        ps_out = "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser\n"
+        ps_out = "123 1 S 0:00 mdns-advertiser /mnt/Flash/mdns-advertiser --diskless\n"
         fstat_out = "\n".join(
             (
                 "root mdns-advertiser 123 4* internet dgram udp *:5353",
-                "TC_SMB_NOT_ADVERTISED",
-                "TC_AFP_NOT_ADVERTISED",
                 "TC_AFP_ADISK_INCOMPATIBLE",
             )
         )
