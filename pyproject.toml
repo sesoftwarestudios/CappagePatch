@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "timecapsulesmb"
-version = "3.0.0-1"
+version = "3.1.0"
 description = "CappagePatch deploys modern Samba to Apple AirPort Time Capsules."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -52,6 +52,9 @@ dependencies = [
 ]
 
 [project.urls]
+Homepage = "https://github.com/sesoftwarestudios/CappagePatch"
+Issues = "https://github.com/sesoftwarestudios/CappagePatch/issues"
+Releases = "https://github.com/sesoftwarestudios/CappagePatch/releases"
 Upstream = "https://github.com/jamesyc/TimeCapsuleSMB"
 
 [project.optional-dependencies]

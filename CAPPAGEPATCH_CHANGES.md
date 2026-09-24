@@ -89,7 +89,7 @@ The September 23, 2026 local release candidate was packaged with full
 validation as `CappagePatch.app.zip` (128 MiB):
 
 ```text
-SHA256 556af47a3fb581de833b0a26d180d650c54accf68a1e29b7680922a949a1d157
+SHA256 1f97c2687498acc4fda9ac80b117f82abbc24409ff5bd46e06e9e77f8dd00c33
 ```
 
 - 1,902 Python tests and 219 subtests passed; the 24 reported warnings are
