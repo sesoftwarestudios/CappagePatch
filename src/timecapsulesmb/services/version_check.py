@@ -11,8 +11,8 @@ from timecapsulesmb.core.paths import package_project_root, resolve_app_paths
 from timecapsulesmb.core.release import CLI_VERSION, CLI_VERSION_CODE
 
 
-VERSION_CHECK_URL = "https://raw.githubusercontent.com/jamesyc/TimeCapsuleSMB/main/version.json"
-DEFAULT_DOWNLOAD_URL = "https://github.com/jamesyc/TimeCapsuleSMB/releases/latest"
+VERSION_CHECK_URL = "https://raw.githubusercontent.com/sesoftwarestudios/CappagePatch/main/version.json"
+DEFAULT_DOWNLOAD_URL = "https://github.com/sesoftwarestudios/CappagePatch/releases/latest"
 DEFAULT_UNSUPPORTED_MESSAGE = "This version is no longer supported. Please update before continuing."
 VERSION_CHECK_TIMEOUT_SECONDS = 3.0
 VERSION_CHECK_CACHE_SECONDS = 3 * 60 * 60
@@ -91,7 +91,7 @@ def fetch_version_payload(
         url,
         headers={
             "Accept": "application/json",
-            "User-Agent": f"TimeCapsuleSMB/{CLI_VERSION}",
+            "User-Agent": f"CappagePatch/{CLI_VERSION}",
         },
     )
     try:

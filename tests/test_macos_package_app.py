@@ -988,6 +988,9 @@ def test_vendor_macho_dependencies_rewrites_loader_path_to_matching_source_copy(
         return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
     monkeypatch.setattr(package_app, "macho_dependencies", fake_dependencies)
+    # This portable unit test uses text fixtures rather than Mach-O binaries.
+    # Do not invoke Apple's macOS-only `lipo` tool on Linux CI.
+    monkeypatch.setattr(package_app, "macho_architectures", lambda path: set())
     monkeypatch.setattr(package_app, "run_quiet", fake_run_quiet)
     monkeypatch.setattr(package_app, "set_macho_id_if_supported", lambda path: None)
 

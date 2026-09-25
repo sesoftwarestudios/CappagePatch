@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a TimeCapsuleSMB problem that is not specifically a doctor failure.
+description: Report a CappagePatch problem that is not specifically a Checkup failure.
 title: "[Bug]: "
 labels:
   - bug

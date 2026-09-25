@@ -51,7 +51,7 @@ body:
     id: context
     attributes:
       label: Recent changes
-      description: Did this start after deploy, firmware flash, device reboot, router change, macOS update, or TimeCapsuleSMB update?
+      description: Did this start after deploy, firmware flash, device reboot, router change, macOS update, or CappagePatch update?
   - type: checkboxes
     id: checks
     attributes:

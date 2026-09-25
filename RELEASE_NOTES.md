@@ -1,5 +1,10 @@
 # CappagePatch 3.1.0
 
+**[Download CappagePatch.app.zip](https://github.com/sesoftwarestudios/CappagePatch/releases/download/v3.1.0/CappagePatch.app.zip)**
+
+The app download is the release asset named `CappagePatch.app.zip`; GitHub's
+automatically generated **Source code** archives are not the macOS app.
+
 CappagePatch 3.1.0 is the first public CappagePatch release. It is an
 independent GPL-3.0-only modified distribution of TimeCapsuleSMB, retaining the
 upstream copyright, license, and Git history.
@@ -34,8 +39,8 @@ unconfirmed interruption, not a demonstrated failure.
 
 ## Installation
 
-1. Download `CappagePatch.app.zip` and verify its SHA-256 digest against the
-   value shown on the GitHub release.
+1. [Download `CappagePatch.app.zip`](https://github.com/sesoftwarestudios/CappagePatch/releases/download/v3.1.0/CappagePatch.app.zip)
+   and verify its SHA-256 digest against the value shown on the GitHub release.
 2. Unzip the app.
 3. Because this community build is ad-hoc signed and not Apple-notarized,
    control-click the app in Finder and choose **Open**. If macOS still blocks

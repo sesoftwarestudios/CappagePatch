@@ -2,6 +2,19 @@
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
+[![Download CappagePatch](https://img.shields.io/badge/download-CappagePatch.app.zip-7657ff?logo=apple)](https://github.com/sesoftwarestudios/CappagePatch/releases/latest/download/CappagePatch.app.zip)
+
+<p align="center">
+  <img src="docs/images/cappagepatch-app-icon.png" width="192" alt="CappagePatch app icon">
+</p>
+
+## Download
+
+**[Download the latest CappagePatch app for macOS](https://github.com/sesoftwarestudios/CappagePatch/releases/latest/download/CappagePatch.app.zip)**
+
+The download is a universal macOS 14+ app for Apple-silicon and Intel Macs.
+See the [latest release](https://github.com/sesoftwarestudios/CappagePatch/releases/latest)
+for installation notes and the SHA-256 checksum.
 
 CappagePatch is an independent, modified GPLv3 fork of
 [TimeCapsuleSMB](https://github.com/jamesyc/TimeCapsuleSMB). It installs modern
@@ -13,6 +26,11 @@ It is not endorsed by the upstream project or Apple Inc.
 [SE Software Studios](https://github.com/sesoftwarestudios).**
 
 **Benjamin Uitzetter — CEO and Senior Developer**
+
+![CappagePatch Overview dashboard using synthetic demonstration data](docs/images/cappagepatch-dashboard.png)
+
+*CappagePatch Overview with a synthetic demonstration device; no private
+network or backup information is shown.*
 
 This fork adds its own macOS identity and interface, disables inherited
 telemetry and automatic update checks by default, and includes the no-pthread
@@ -67,8 +85,7 @@ This project has 2 parts:
 - a fork of Samba 4, modified to work on the Apple Time Capsule 
 - the installers for the Samba binary, via terminal or the **macOS GUI app**. 
 
-The Apple Time Capsule will run its own Samba 4.25 server, and will advertise SMB over Bonjour (show up automatically in the "Network" folder on macOS). You can open Finder or use Connect to Server, and you can use a normal SMB URL without relying on Apple’s legacy SMB1 stack. You can also use the disk for Time Machine backups:\
-<img width="478" height="268" alt="image" src="https://github.com/user-attachments/assets/c713a1c6-ff71-43a2-a057-451223a1c0e0" />  
+The Apple Time Capsule will run its own Samba 4.25 server, and will advertise SMB over Bonjour (show up automatically in the "Network" folder on macOS). You can open Finder or use Connect to Server, and you can use a normal SMB URL without relying on Apple’s legacy SMB1 stack. You can also use the disk for Time Machine backups.
 You get the full Apple experience reproduced: after you install this, you generally do not have to worry about it again, even if the device IP address changes. It will show up automatically in the Time Machine section in the Settings app, and it will use mDNS/Bonjour so it will work fine even if the IP address is not static and gets changed.
 
 The "Install" or `deploy` script will install files in `/mnt/Flash` on the Time Capsule, plus a `.samba4` folder on the root of the hard drive. The `uninstall` script removes those managed files and can optionally reboot the device afterward.
@@ -79,8 +96,14 @@ The current authentication model accepts any user as the username, and the Samba
 
 AirPort Extreme devices are not officially supported. Unofficially, they work fine. Note that this is installed to the hard drive, so it will not work for an Airport Extreme without a hard drive (as there is not enough space to store the binaries on the flash memory).   
 
-If the upstream TimeCapsuleSMB work has been useful to you, you can
-[support its original developer](https://buymeacoffee.com/jamesyc).
+## Support CappagePatch
+
+CappagePatch is created and maintained by **Benjamin Uitzetter, CEO and Senior
+Developer at [SE Software Studios](https://sesoftwarestudios.com/)**. Support
+this project by starring and sharing the
+[CappagePatch repository](https://github.com/sesoftwarestudios/CappagePatch),
+filing useful reports in its [issue tracker](https://github.com/sesoftwarestudios/CappagePatch/issues),
+or contacting [SE Software Studios](https://sesoftwarestudios.com/).
 
 ## Requirements
 
@@ -103,7 +126,7 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 
 ## Quick Start (macOS app)
 
-1. Download `CappagePatch.app.zip` from this repository's Releases page, or build it from source as described below.
+1. [Download `CappagePatch.app.zip`](https://github.com/sesoftwarestudios/CappagePatch/releases/latest/download/CappagePatch.app.zip), or build it from source as described below.
 2. Unzip the app and run it. The release notes state whether a build is signed
    and notarized. For an explicitly unnotarized development build, use
    Finder's **Open** command and macOS's **Open Anyway** confirmation if
@@ -114,14 +137,11 @@ Also, if you are an expert and want to DIY the install, you can copy the binary 
 6. Wait for the app to enable SSH for your Time Capsule.
     - If it fails, close the app, reopen the app, remove the saved device, and try again.
     - Also, try rebooting your device.
-7. Click the added device in the left sidebar, and then click on the "Install/Update" tab.  
-   <img width="543" height="390" alt="image" src="https://github.com/user-attachments/assets/ea17ef0e-7624-4a06-888c-72ba6f8d4f8f" />  
-8. Click "Install/Update" to deploy to the device.  
-   <img width="544" height="390" alt="image" src="https://github.com/user-attachments/assets/49975391-29e5-46df-b249-2a75762983a7" />    
-    - If deploying to the device fails, try removing the saved device from the app, then go back to step 4 above to "Add Device" again. It sometimes takes more than one deploy to copy all the files over.
+7. Click the added device in the left sidebar, and then open **Install / Update**.
+8. Click **Install / Update** to deploy to the device.
+    - If deployment fails, review **Activity** and run **Checkup**. If the suggested recovery does not resolve it, attach sanitized diagnostics to a [CappagePatch issue](https://github.com/sesoftwarestudios/CappagePatch/issues).
     - There are reports the device may reset during a deploy, see [this issue](https://github.com/jamesyc/TimeCapsuleSMB/issues/177) for more information.
-9. (For gen 1-4 devices only) Go to the maintenance page "Persistent NetBSD4 Boot Hook" section. Install the firmware patch to allow the device to automatically start Samba after reboots. Click "Back Up and Inspect" and "Plan Patch" to check if it can be installed; then run "Write Patch" to flash it to your device.    
-   <img width="634" height="429" alt="image" src="https://github.com/user-attachments/assets/e35d8934-975b-4079-8087-8c22984a3165" />
+9. (For gen 1-4 devices only) Go to the maintenance page **Persistent NetBSD4 Boot Hook** section. Install the firmware patch to allow the device to automatically start Samba after reboots. Click **Back Up and Inspect** and **Plan Patch** to check if it can be installed; then run **Write Patch** to flash it to your device.
 10. (Optional) Wait 5-10 minutes for Samba to fully start up, then go to the Checkup tab and run a Checkup.
 11. On modern macOS, select the advertised SMB destination. Remove a stale AFP
     destination from that Mac only if you are using the modern-only preset.
