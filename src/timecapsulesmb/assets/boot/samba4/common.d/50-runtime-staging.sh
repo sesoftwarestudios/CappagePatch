@@ -452,6 +452,14 @@ ${smbd_aio_fork_line}    acl_xattr:ignore system acls = yes
     fruit:metadata = $smbd_fruit_metadata
     fruit:encoding = native
     fruit:time machine = yes
+    # Samba requires this locking profile for Time Machine shares. In
+    # particular, do not mirror SMB byte-range locks into host POSIX locks on
+    # the Time Capsule's HFS volume: stale host locks can otherwise make a
+    # sparsebundle band fail to reopen with EBUSY after a client disconnect.
+    durable handles = yes
+    kernel oplocks = no
+    kernel share modes = no
+    posix locking = no
     fruit:posix_rename = yes
     xattr_tdb:file = $payload_dir/private/xattr.tdb
     force user = root

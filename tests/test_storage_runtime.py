@@ -5391,6 +5391,10 @@ MaSt = (
             proc.stdout.count("vfs objects = catia fruit streams_xattr acl_xattr xattr_tdb"),
             2,
         )
+        self.assertEqual(proc.stdout.count("durable handles = yes"), 2)
+        self.assertEqual(proc.stdout.count("kernel oplocks = no"), 2)
+        self.assertEqual(proc.stdout.count("kernel share modes = no"), 2)
+        self.assertEqual(proc.stdout.count("posix locking = no"), 2)
         self.assertNotIn("aio_fork:max_children", proc.stdout)
         self.assertIn("deadtime = 720", proc.stdout)
         self.assertIn("smb3 directory leases = no", proc.stdout)
@@ -5446,6 +5450,10 @@ MaSt = (
             2,
         )
         self.assertEqual(proc.stdout.count("aio_fork:max_children = 8"), 2)
+        self.assertEqual(proc.stdout.count("durable handles = yes"), 2)
+        self.assertEqual(proc.stdout.count("kernel oplocks = no"), 2)
+        self.assertEqual(proc.stdout.count("kernel share modes = no"), 2)
+        self.assertEqual(proc.stdout.count("posix locking = no"), 2)
         self.assertNotIn("smb2 max credits", proc.stdout)
         self.assertNotIn("strict sync", proc.stdout)
 

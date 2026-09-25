@@ -31,6 +31,7 @@ from timecapsulesmb.checks.bonjour import (
     select_smb_instance,
 )
 from timecapsulesmb.checks.doctor import (
+    check_time_machine_locking_profile,
     check_xattr_tdb_persistence,
     run_doctor_checks,
 )
@@ -91,6 +92,11 @@ DEFAULT_ACTIVE_SMB_CONF = """[global]
     xattr_tdb:file = /Volumes/dk2/.samba4/private/xattr.tdb
 [Data]
     path = /Volumes/dk2/ShareRoot
+    fruit:time machine = yes
+    durable handles = yes
+    kernel oplocks = no
+    kernel share modes = no
+    posix locking = no
 """
 
 
@@ -3432,6 +3438,53 @@ class CheckTests(unittest.TestCase):
             result = check_xattr_tdb_persistence(SshConnection("root@tc", "pw", "-o foo"), config_text=smb_conf)
         self.assertEqual(result.status, "PASS")
         read_active_smb_conf.assert_not_called()
+
+    def test_check_time_machine_locking_profile_passes_for_explicit_share_settings(self) -> None:
+        result = check_time_machine_locking_profile(DEFAULT_ACTIVE_SMB_CONF)
+
+        self.assertEqual(result.status, "PASS")
+        self.assertIn("Data", result.message)
+
+    def test_check_time_machine_locking_profile_accepts_explicit_global_settings(self) -> None:
+        smb_conf = """[global]
+    durable handles = yes
+    kernel oplocks = no
+    kernel share modes = no
+    posix locking = no
+[Data]
+    fruit:time machine = yes
+"""
+
+        result = check_time_machine_locking_profile(smb_conf)
+
+        self.assertEqual(result.status, "PASS")
+
+    def test_check_time_machine_locking_profile_warns_with_exact_missing_options(self) -> None:
+        result = check_time_machine_locking_profile("""[global]
+[Data]
+    fruit:time machine = yes
+    durable handles = yes
+""")
+
+        self.assertEqual(result.status, "WARN")
+        self.assertEqual(result.details["code"], "time_machine_locking_profile_incomplete")
+        self.assertEqual(
+            [(issue["option"], issue["actual"]) for issue in result.details["issues"]],
+            [
+                ("kernel oplocks", "<unset>"),
+                ("kernel share modes", "<unset>"),
+                ("posix locking", "<unset>"),
+            ],
+        )
+        self.assertIn("run Install / Update Samba", result.message)
+
+    def test_check_time_machine_locking_profile_warns_for_unsafe_override(self) -> None:
+        smb_conf = DEFAULT_ACTIVE_SMB_CONF.replace("posix locking = no", "posix locking = yes")
+
+        result = check_time_machine_locking_profile(smb_conf)
+
+        self.assertEqual(result.status, "WARN")
+        self.assertIn("Data: posix locking=yes (expected no)", result.message)
 
     def test_run_doctor_checks_reuses_active_smb_conf_for_xattr_check(self) -> None:
         active_smb_conf = "[global]\n    xattr_tdb:file = /Volumes/dk2/samba4/private/xattr.tdb\n[Data]\n"

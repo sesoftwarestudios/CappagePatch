@@ -1,4 +1,20 @@
-# CappagePatch 3.1.0
+# CappagePatch 3.1.1
+
+This patch release makes Samba's required Time Machine locking profile
+explicit on every generated backup share:
+
+- durable handles remain enabled;
+- kernel oplocks and kernel share modes remain disabled; and
+- POSIX locking is disabled so SMB byte-range locks are not mirrored into
+  stale host locks on the Time Capsule's HFS volume.
+
+The change addresses a reproduced post-disconnect failure in which macOS could
+list and read the sparsebundle but repeatedly failed to reopen band `0` with
+`EBUSY`, eventually reporting `BACKUP_FAILED_DISK_IMAGE_NOT_MOUNTED (21)`.
+Existing backups are preserved. AFP service and Older Mac Support are not
+changed, so legacy AFP and modern SMB clients can continue to coexist.
+
+## CappagePatch 3.1.0
 
 **[Download CappagePatch.app.zip](https://github.com/sesoftwarestudios/CappagePatch/releases/download/v3.1.0/CappagePatch.app.zip)**
 

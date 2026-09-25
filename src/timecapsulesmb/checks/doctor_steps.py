@@ -391,6 +391,91 @@ def check_xattr_tdb_persistence(connection: SshConnection, config_text: str | No
     return CheckResult("PASS", f"xattr_tdb:file is persistent: {', '.join(paths)}")
 
 
+_TIME_MACHINE_LOCKING_PROFILE = {
+    "durable handles": True,
+    "kernel oplocks": False,
+    "kernel share modes": False,
+    "posix locking": False,
+}
+_SMB_TRUE_VALUES = frozenset({"1", "yes", "true", "on"})
+_SMB_FALSE_VALUES = frozenset({"0", "no", "false", "off"})
+
+
+def _parse_smb_section_options(config_text: str) -> list[tuple[str, dict[str, str]]]:
+    sections: list[tuple[str, dict[str, str]]] = []
+    current_options: dict[str, str] | None = None
+    for line in config_text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", ";")):
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            name = stripped[1:-1].strip()
+            current_options = {}
+            sections.append((name, current_options))
+            continue
+        if current_options is None:
+            continue
+        key, separator, value = stripped.partition("=")
+        if separator:
+            current_options[key.strip().lower()] = value.strip()
+    return sections
+
+
+def _normalized_smb_bool(value: str | None) -> bool | None:
+    normalized = (value or "").strip().lower()
+    if normalized in _SMB_TRUE_VALUES:
+        return True
+    if normalized in _SMB_FALSE_VALUES:
+        return False
+    return None
+
+
+def check_time_machine_locking_profile(config_text: str) -> CheckResult:
+    if not config_text.strip():
+        return CheckResult("WARN", f"could not inspect Time Machine locking profile at {RUNTIME_SMB_CONF}")
+
+    sections = _parse_smb_section_options(config_text)
+    global_options = next(
+        (options for name, options in sections if name.strip().lower() == "global"),
+        {},
+    )
+    time_machine_shares = [
+        (name, options)
+        for name, options in sections
+        if name.strip().lower() != "global"
+        and _normalized_smb_bool(options.get("fruit:time machine")) is True
+    ]
+    if not time_machine_shares:
+        return CheckResult("WARN", "active smb.conf has no share explicitly enabled for Time Machine")
+
+    issues: list[dict[str, str]] = []
+    for share_name, share_options in time_machine_shares:
+        for option, expected in _TIME_MACHINE_LOCKING_PROFILE.items():
+            raw_value = share_options.get(option, global_options.get(option))
+            if _normalized_smb_bool(raw_value) is expected:
+                continue
+            issues.append({
+                "share": share_name,
+                "option": option,
+                "expected": "yes" if expected else "no",
+                "actual": raw_value if raw_value is not None else "<unset>",
+            })
+
+    share_names = ", ".join(name for name, _options in time_machine_shares)
+    if issues:
+        rendered = "; ".join(
+            f"{issue['share']}: {issue['option']}={issue['actual']} (expected {issue['expected']})"
+            for issue in issues
+        )
+        return CheckResult(
+            "WARN",
+            f"Time Machine locking profile is incomplete: {rendered}; run Install / Update Samba",
+            {"code": "time_machine_locking_profile_incomplete", "issues": issues},
+        )
+
+    return CheckResult("PASS", f"Time Machine locking profile is explicit for share(s): {share_names}")
+
+
 def _add_active_smb_conf_results(
     active_smb_conf: str | None,
     active_smb_conf_reason: str,
@@ -2117,6 +2202,7 @@ def _doctor_check_active_smb_conf(target: DoctorTarget, remote: RemoteAccess, si
         else:
             reason = ""
         sink.add(check_xattr_tdb_persistence(target.connection, active_smb_conf))
+        sink.add(check_time_machine_locking_profile(active_smb_conf))
         return SmbConfigState(text=active_smb_conf, reason=reason)
     except Exception as e:
         sink.add(CheckResult("WARN", f"xattr_tdb:file check skipped: {e}"))

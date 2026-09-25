@@ -32,6 +32,7 @@ from timecapsulesmb.checks.doctor_steps import (
     _doctor_check_ssh_login,
     _doctor_probe_startup_age,
     _doctor_validate_config,
+    check_time_machine_locking_profile,
     check_xattr_tdb_persistence,
 )
 from timecapsulesmb.checks.models import CheckResult
