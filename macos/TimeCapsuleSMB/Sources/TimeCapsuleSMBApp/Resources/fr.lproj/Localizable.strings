@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Copie de rsync et de la configuration de son démon vers le volume de payload.";
 "timeline.deploy.title.upload_rsync" = "Téléverser rsync";
 "toggle.enable_rsync" = "Activer rsync";
+"time_machine_recovery.title" = "Récupération de la connexion Time Machine";
+"time_machine_recovery.description" = "Utilisez cette option uniquement si macOS indique encore que la sauvegarde a échoué après l’installation. Elle redémarre les services Time Machine locaux sans jamais supprimer les données de sauvegarde.";
+"time_machine_recovery.confirm.title" = "Réinitialiser la connexion Time Machine ?";
+"time_machine_recovery.confirm.message" = "CappagePatch refusera de continuer si une sauvegarde est en cours, puis demandera l’autorisation administrateur pour redémarrer les services Time Machine locaux. Aucune donnée de sauvegarde ne sera supprimée.";
+"time_machine_recovery.confirm.action" = "Réinitialiser la connexion";
+"time_machine_recovery.action.reset" = "Réinitialiser la connexion Time Machine";
+"time_machine_recovery.action.resetting" = "Réinitialisation de la connexion…";
+"time_machine_recovery.status.resetting" = "Redémarrage des services Time Machine locaux…";
+"time_machine_recovery.status.succeeded" = "La connexion a été réinitialisée. Choisissez Sauvegarder maintenant dans Time Machine.";
+"time_machine_recovery.error.backup_running" = "Une sauvegarde Time Machine est en cours. Laissez-la se terminer ou arrêtez-la avant de réinitialiser la connexion.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch n’a pas pu déterminer de façon sûre si Time Machine est inactif. Rien n’a été modifié.";
+"time_machine_recovery.error.cancelled" = "L’autorisation administrateur a été annulée. Rien n’a été modifié.";
+"time_machine_recovery.error.failed" = "La connexion Time Machine n’a pas pu être réinitialisée. Rien n’a été supprimé.";
+"time_machine_recovery.error.failed_detail" = "La connexion Time Machine n’a pas pu être réinitialisée : %@";

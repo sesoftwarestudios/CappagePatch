@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "rsync und seine Daemon-Konfiguration werden auf das Payload-Volume kopiert.";
 "timeline.deploy.title.upload_rsync" = "rsync hochladen";
 "toggle.enable_rsync" = "rsync aktivieren";
+"time_machine_recovery.title" = "Time-Machine-Verbindung wiederherstellen";
+"time_machine_recovery.description" = "Verwenden Sie dies nur, wenn macOS nach der Installation weiterhin meldet, dass kein Backup erstellt werden konnte. Die lokalen Time-Machine-Dienste werden neu gestartet; Backup-Daten werden niemals gelöscht.";
+"time_machine_recovery.confirm.title" = "Time-Machine-Verbindung zurücksetzen?";
+"time_machine_recovery.confirm.message" = "CappagePatch fährt nicht fort, wenn ein Backup läuft, und bittet danach um Administratorfreigabe zum Neustart der lokalen Time-Machine-Dienste. Es werden keine Backup-Daten gelöscht.";
+"time_machine_recovery.confirm.action" = "Verbindung zurücksetzen";
+"time_machine_recovery.action.reset" = "Time-Machine-Verbindung zurücksetzen";
+"time_machine_recovery.action.resetting" = "Verbindung wird zurückgesetzt …";
+"time_machine_recovery.status.resetting" = "Lokale Time-Machine-Dienste werden neu gestartet …";
+"time_machine_recovery.status.succeeded" = "Die Verbindung wurde zurückgesetzt. Wählen Sie in Time Machine „Backup jetzt erstellen“.";
+"time_machine_recovery.error.backup_running" = "Ein Time-Machine-Backup läuft. Lassen Sie es abschließen oder stoppen Sie es, bevor Sie die Verbindung zurücksetzen.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch konnte nicht sicher feststellen, ob Time Machine inaktiv ist. Es wurde nichts geändert.";
+"time_machine_recovery.error.cancelled" = "Die Administratorfreigabe wurde abgebrochen. Es wurde nichts geändert.";
+"time_machine_recovery.error.failed" = "Die Time-Machine-Verbindung konnte nicht zurückgesetzt werden. Es wurde nichts gelöscht.";
+"time_machine_recovery.error.failed_detail" = "Die Time-Machine-Verbindung konnte nicht zurückgesetzt werden: %@";

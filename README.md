@@ -459,6 +459,26 @@ Wait a little, then run:
 .venv/bin/tcapsule doctor
 ```
 
+### Time Machine Still Says It Could Not Back Up After An Update
+
+macOS can retain a failed sparsebundle attachment in its local Time Machine
+process even after CappagePatch has successfully updated and restarted Samba on
+the Time Capsule. In that case, later backup requests may fail immediately with
+`BACKUP_FAILED_DISK_IMAGE_NOT_MOUNTED (21)` instead of attempting a fresh
+mount.
+
+Open the device's **Install / Update** tab. After a verified installation, use
+**Time Machine Connection Recovery > Reset Time Machine Connection**. The app:
+
+- refuses to continue if `tmutil` reports that a backup is running;
+- asks for normal macOS administrator approval;
+- restarts only the local Time Machine services; and
+- does not delete, rename, repair, mount, or rewrite any backup.
+
+After the reset, choose **Back Up Now** in Time Machine. This action affects
+only the Mac running CappagePatch; other Macs using the same Time Capsule are
+not changed.
+
 ### I Want The Full Technical Story
 
 Read:

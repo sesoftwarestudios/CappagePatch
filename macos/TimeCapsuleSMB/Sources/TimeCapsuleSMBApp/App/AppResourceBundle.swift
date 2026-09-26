@@ -45,8 +45,8 @@ enum AppResourceBundle {
         resolvedBundle
     }
 
-    static var bundleURL: URL? {
-        resolvedBundle.bundleURL
+    static var resourceURL: URL? {
+        resolvedBundle.resourceURL
     }
 
     private static let resolvedBundle: Bundle = {
@@ -64,11 +64,11 @@ enum AppResourceBundle {
 
 public enum AppLaunchResourceValidation {
     public static func validate() -> String? {
-        guard let bundleURL = AppResourceBundle.bundleURL else {
+        guard let resourceURL = AppResourceBundle.resourceURL else {
             return "TimeCapsuleSMB resource bundle could not be located."
         }
 
-        let localizable = bundleURL
+        let localizable = resourceURL
             .appendingPathComponent("en.lproj", isDirectory: true)
             .appendingPathComponent("Localizable.strings")
         guard FileManager.default.isReadableFile(atPath: localizable.path) else {

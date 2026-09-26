@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Copia di rsync e della configurazione del demone sul volume payload.";
 "timeline.deploy.title.upload_rsync" = "Carica rsync";
 "toggle.enable_rsync" = "Abilita rsync";
+"time_machine_recovery.title" = "Ripristino della connessione Time Machine";
+"time_machine_recovery.description" = "Usa questa opzione solo se macOS continua a segnalare che il backup non è riuscito dopo l’installazione. Riavvia i servizi Time Machine locali e non elimina mai i dati dei backup.";
+"time_machine_recovery.confirm.title" = "Ripristinare la connessione Time Machine?";
+"time_machine_recovery.confirm.message" = "CappagePatch non procederà se è in corso un backup, quindi chiederà l’autorizzazione dell’amministratore per riavviare i servizi Time Machine locali. Nessun dato di backup verrà eliminato.";
+"time_machine_recovery.confirm.action" = "Ripristina connessione";
+"time_machine_recovery.action.reset" = "Ripristina connessione Time Machine";
+"time_machine_recovery.action.resetting" = "Ripristino della connessione…";
+"time_machine_recovery.status.resetting" = "Riavvio dei servizi Time Machine locali…";
+"time_machine_recovery.status.succeeded" = "La connessione è stata ripristinata. Scegli Esegui backup adesso in Time Machine.";
+"time_machine_recovery.error.backup_running" = "È in corso un backup di Time Machine. Attendi il completamento o interrompilo prima di ripristinare la connessione.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch non ha potuto determinare in modo sicuro se Time Machine è inattivo. Non è stato modificato nulla.";
+"time_machine_recovery.error.cancelled" = "L’autorizzazione dell’amministratore è stata annullata. Non è stato modificato nulla.";
+"time_machine_recovery.error.failed" = "Impossibile ripristinare la connessione Time Machine. Non è stato eliminato nulla.";
+"time_machine_recovery.error.failed_detail" = "Impossibile ripristinare la connessione Time Machine: %@";

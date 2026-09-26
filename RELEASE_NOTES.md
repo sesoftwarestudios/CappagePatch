@@ -1,4 +1,27 @@
-# CappagePatch 3.1.1
+# CappagePatch 3.1.2
+
+This recovery release adds a guarded **Reset Time Machine Connection** action
+to the verified-install screen. It is intended for the specific case where
+macOS keeps returning `BACKUP_FAILED_DISK_IMAGE_NOT_MOUNTED (21)` after the
+Time Capsule-side update has already completed.
+
+- The action checks `tmutil status` and refuses to run while a backup is active.
+- It explains the operation and requires explicit confirmation plus the normal
+  macOS administrator authorization dialog.
+- It restarts only the local `backupd-helper` and `backupd` processes. Launchd
+  recreates them on demand.
+- It never deletes, renames, repairs, mounts, or rewrites a sparsebundle or any
+  other backup data.
+- The complete recovery interface is localized in every language supported by
+  CappagePatch.
+
+The recovery was derived from a reproduced macOS 26 case: the pre-update
+`backupd` process retained a failed sparsebundle attachment after repeated
+band `0` `EBUSY` errors. After resetting the local services, a fresh process
+mounted the same backup, completed an incremental backup, synchronized its
+result files, and unmounted cleanly.
+
+## CappagePatch 3.1.1
 
 This patch release makes Samba's required Time Machine locking profile
 explicit on every generated backup share:

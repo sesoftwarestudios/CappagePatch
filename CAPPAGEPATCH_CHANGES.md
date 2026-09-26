@@ -25,6 +25,11 @@ Benjamin Uitzetter is the project's CEO and Senior Developer.
   verifies modern SMB remains advertised, then checks the Apple AFP process,
   TCP 548 listener, AFP Bonjour record, and combined Time Machine metadata when
   this mode is enabled.
+- Added a guarded **Reset Time Machine Connection** action after a verified
+  install. It refuses to interrupt an active backup, requires macOS
+  administrator approval, restarts only the local Time Machine daemons, and
+  never deletes or modifies backup data. This recovers a stale macOS
+  disk-image state without requiring Terminal commands or a Mac restart.
 - Added in-app upstream credit, GPLv3 notice, warranty notice, and trademark
   clarification.
 - Preserved the internal `timecapsulesmb` Python module, `tcapsule` helper,

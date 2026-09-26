@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Копирование rsync и конфигурации его демона на том полезной нагрузки.";
 "timeline.deploy.title.upload_rsync" = "Загрузить rsync";
 "toggle.enable_rsync" = "Включить rsync";
+"time_machine_recovery.title" = "Восстановление подключения Time Machine";
+"time_machine_recovery.description" = "Используйте это только в том случае, если после установки macOS по-прежнему сообщает, что резервное копирование не удалось. Локальные службы Time Machine будут перезапущены, а данные резервных копий не будут удалены.";
+"time_machine_recovery.confirm.title" = "Сбросить подключение Time Machine?";
+"time_machine_recovery.confirm.message" = "CappagePatch откажется продолжать, если выполняется резервное копирование, а затем запросит разрешение администратора на перезапуск локальных служб Time Machine. Данные резервных копий не будут удалены.";
+"time_machine_recovery.confirm.action" = "Сбросить подключение";
+"time_machine_recovery.action.reset" = "Сбросить подключение Time Machine";
+"time_machine_recovery.action.resetting" = "Сброс подключения…";
+"time_machine_recovery.status.resetting" = "Перезапуск локальных служб Time Machine…";
+"time_machine_recovery.status.succeeded" = "Подключение сброшено. Выберите «Создать резервную копию» в Time Machine.";
+"time_machine_recovery.error.backup_running" = "Выполняется резервное копирование Time Machine. Дождитесь его завершения или остановите его перед сбросом подключения.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch не удалось безопасно определить, бездействует ли Time Machine, поэтому ничего не было изменено.";
+"time_machine_recovery.error.cancelled" = "Разрешение администратора отменено. Ничего не было изменено.";
+"time_machine_recovery.error.failed" = "Не удалось сбросить подключение Time Machine. Ничего не было удалено.";
+"time_machine_recovery.error.failed_detail" = "Не удалось сбросить подключение Time Machine: %@";

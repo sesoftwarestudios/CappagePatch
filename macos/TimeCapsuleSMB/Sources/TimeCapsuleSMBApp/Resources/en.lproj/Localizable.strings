@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Copying rsync and its daemon configuration to the payload volume.";
 "timeline.deploy.title.upload_rsync" = "Upload rsync";
 "toggle.enable_rsync" = "Enable rsync";
+"time_machine_recovery.title" = "Time Machine Connection Recovery";
+"time_machine_recovery.description" = "Use this only if macOS still says it could not back up after installation. It restarts the local Time Machine services and never deletes backup data.";
+"time_machine_recovery.confirm.title" = "Reset Time Machine Connection?";
+"time_machine_recovery.confirm.message" = "CappagePatch will first refuse to continue if a backup is running, then ask for administrator approval to restart the local Time Machine services. No backup data will be deleted.";
+"time_machine_recovery.confirm.action" = "Reset Connection";
+"time_machine_recovery.action.reset" = "Reset Time Machine Connection";
+"time_machine_recovery.action.resetting" = "Resetting Connection...";
+"time_machine_recovery.status.resetting" = "Restarting the local Time Machine services...";
+"time_machine_recovery.status.succeeded" = "The connection was reset. Choose Back Up Now in Time Machine.";
+"time_machine_recovery.error.backup_running" = "A Time Machine backup is running. Let it finish or stop it before resetting the connection.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch could not safely determine whether Time Machine is idle, so nothing was changed.";
+"time_machine_recovery.error.cancelled" = "Administrator approval was cancelled. Nothing was changed.";
+"time_machine_recovery.error.failed" = "The Time Machine connection could not be reset. Nothing was deleted.";
+"time_machine_recovery.error.failed_detail" = "The Time Machine connection could not be reset: %@";

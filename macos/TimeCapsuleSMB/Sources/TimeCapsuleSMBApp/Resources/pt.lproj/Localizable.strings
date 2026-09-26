@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Copiando o rsync e a configuração do daemon para o volume de payload.";
 "timeline.deploy.title.upload_rsync" = "Carregar rsync";
 "toggle.enable_rsync" = "Ativar rsync";
+"time_machine_recovery.title" = "Recuperação da ligação do Time Machine";
+"time_machine_recovery.description" = "Utilize apenas se o macOS continuar a indicar que não conseguiu efetuar a cópia após a instalação. Reinicia os serviços locais do Time Machine e nunca elimina dados das cópias.";
+"time_machine_recovery.confirm.title" = "Repor a ligação do Time Machine?";
+"time_machine_recovery.confirm.message" = "O CappagePatch recusará continuar se estiver uma cópia em curso e depois pedirá autorização de administrador para reiniciar os serviços locais do Time Machine. Não serão eliminados dados.";
+"time_machine_recovery.confirm.action" = "Repor ligação";
+"time_machine_recovery.action.reset" = "Repor ligação do Time Machine";
+"time_machine_recovery.action.resetting" = "A repor a ligação…";
+"time_machine_recovery.status.resetting" = "A reiniciar os serviços locais do Time Machine…";
+"time_machine_recovery.status.succeeded" = "A ligação foi reposta. Escolha Efetuar cópia agora no Time Machine.";
+"time_machine_recovery.error.backup_running" = "Está em curso uma cópia do Time Machine. Deixe-a terminar ou pare-a antes de repor a ligação.";
+"time_machine_recovery.error.status_unavailable" = "O CappagePatch não conseguiu determinar com segurança se o Time Machine está inativo, por isso nada foi alterado.";
+"time_machine_recovery.error.cancelled" = "A autorização de administrador foi cancelada. Nada foi alterado.";
+"time_machine_recovery.error.failed" = "Não foi possível repor a ligação do Time Machine. Nada foi eliminado.";
+"time_machine_recovery.error.failed_detail" = "Não foi possível repor a ligação do Time Machine: %@";

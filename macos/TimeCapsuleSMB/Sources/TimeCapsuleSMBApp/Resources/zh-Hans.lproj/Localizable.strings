@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "正在将 rsync 及其守护进程配置复制到有效负载卷。";
 "timeline.deploy.title.upload_rsync" = "上传 rsync";
 "toggle.enable_rsync" = "启用 rsync";
+"time_machine_recovery.title" = "恢复时间机器连接";
+"time_machine_recovery.description" = "仅当安装后 macOS 仍提示无法备份时使用。此操作会重新启动本机的时间机器服务，绝不会删除备份数据。";
+"time_machine_recovery.confirm.title" = "重置时间机器连接？";
+"time_machine_recovery.confirm.message" = "如果备份正在运行，CappagePatch 将拒绝继续；随后会请求管理员授权以重新启动本机时间机器服务。不会删除任何备份数据。";
+"time_machine_recovery.confirm.action" = "重置连接";
+"time_machine_recovery.action.reset" = "重置时间机器连接";
+"time_machine_recovery.action.resetting" = "正在重置连接…";
+"time_machine_recovery.status.resetting" = "正在重新启动本机时间机器服务…";
+"time_machine_recovery.status.succeeded" = "连接已重置。请在时间机器中选择“立即备份”。";
+"time_machine_recovery.error.backup_running" = "时间机器备份正在运行。请等待其完成或停止备份后再重置连接。";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch 无法安全确认时间机器是否空闲，因此未进行任何更改。";
+"time_machine_recovery.error.cancelled" = "管理员授权已取消。未进行任何更改。";
+"time_machine_recovery.error.failed" = "无法重置时间机器连接。没有删除任何内容。";
+"time_machine_recovery.error.failed_detail" = "无法重置时间机器连接：%@";

@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "Bezig met kopiëren van rsync en de daemonconfiguratie naar het payloadvolume.";
 "timeline.deploy.title.upload_rsync" = "rsync uploaden";
 "toggle.enable_rsync" = "rsync inschakelen";
+"time_machine_recovery.title" = "Time Machine-verbinding herstellen";
+"time_machine_recovery.description" = "Gebruik dit alleen als macOS na de installatie nog steeds meldt dat er geen reservekopie kon worden gemaakt. De lokale Time Machine-services worden opnieuw gestart; reservekopiegegevens worden nooit verwijderd.";
+"time_machine_recovery.confirm.title" = "Time Machine-verbinding opnieuw instellen?";
+"time_machine_recovery.confirm.message" = "CappagePatch gaat niet verder als er een reservekopie actief is en vraagt daarna om beheerdersgoedkeuring om de lokale Time Machine-services opnieuw te starten. Er worden geen reservekopiegegevens verwijderd.";
+"time_machine_recovery.confirm.action" = "Verbinding opnieuw instellen";
+"time_machine_recovery.action.reset" = "Time Machine-verbinding opnieuw instellen";
+"time_machine_recovery.action.resetting" = "Verbinding wordt opnieuw ingesteld…";
+"time_machine_recovery.status.resetting" = "Lokale Time Machine-services worden opnieuw gestart…";
+"time_machine_recovery.status.succeeded" = "De verbinding is opnieuw ingesteld. Kies Maak nu reservekopie in Time Machine.";
+"time_machine_recovery.error.backup_running" = "Er is een Time Machine-reservekopie actief. Laat deze voltooien of stop hem voordat u de verbinding opnieuw instelt.";
+"time_machine_recovery.error.status_unavailable" = "CappagePatch kon niet veilig bepalen of Time Machine inactief is. Er is niets gewijzigd.";
+"time_machine_recovery.error.cancelled" = "Beheerdersgoedkeuring is geannuleerd. Er is niets gewijzigd.";
+"time_machine_recovery.error.failed" = "De Time Machine-verbinding kon niet opnieuw worden ingesteld. Er is niets verwijderd.";
+"time_machine_recovery.error.failed_detail" = "De Time Machine-verbinding kon niet opnieuw worden ingesteld: %@";

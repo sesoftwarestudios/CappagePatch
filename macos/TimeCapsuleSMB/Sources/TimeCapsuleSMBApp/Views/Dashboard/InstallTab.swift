@@ -7,6 +7,8 @@ struct InstallTab: View {
     let appSettings: AppSettings
     let showDiagnostics: () -> Void
     let diagnosticsText: () -> String
+    @StateObject private var timeMachineRecovery = TimeMachineConnectionRecoveryStore()
+    @State private var showsTimeMachineRecoveryConfirmation = false
 
     var body: some View {
         let store = session.deployStore
@@ -73,6 +75,13 @@ struct InstallTab: View {
                         ) { action in
                             session.performInstallAction(action, profile: profile, showDiagnostics: showDiagnostics)
                         }
+
+                        TimeMachineConnectionRecoveryView(
+                            state: timeMachineRecovery.state,
+                            reset: {
+                                showsTimeMachineRecoveryConfirmation = true
+                            }
+                        )
                     }
 
                     InstallExecutionOptionsView(store: store, isDeviceBusy: isDeviceBusy)
@@ -85,6 +94,17 @@ struct InstallTab: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .alert(
+            L10n.string("time_machine_recovery.confirm.title"),
+            isPresented: $showsTimeMachineRecoveryConfirmation
+        ) {
+            Button(L10n.string("action.cancel"), role: .cancel) {}
+            Button(L10n.string("time_machine_recovery.confirm.action")) {
+                timeMachineRecovery.reset()
+            }
+        } message: {
+            Text(L10n.string("time_machine_recovery.confirm.message"))
+        }
     }
 
     private func handleRecovery(action: RecoveryAction, error: BackendErrorViewModel) {
@@ -97,6 +117,89 @@ struct InstallTab: View {
 
     private func isDisabled(_ action: InstallUserAction, store: DeployWorkflowStore, isDeviceBusy: Bool) -> Bool {
         !InstallActionAvailabilityPolicy.isEnabled(action, store: store, isDeviceBusy: isDeviceBusy)
+    }
+}
+
+private struct TimeMachineConnectionRecoveryView: View {
+    let state: TimeMachineConnectionRecoveryState
+    let reset: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(L10n.string("time_machine_recovery.title"))
+                .font(.headline)
+            Text(L10n.string("time_machine_recovery.description"))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let statusPresentation {
+                Label(statusPresentation.message, systemImage: statusPresentation.systemImage)
+                    .font(.callout)
+                    .foregroundStyle(statusPresentation.color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button(action: reset) {
+                if state.isResetting {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(L10n.string("time_machine_recovery.action.resetting"))
+                } else {
+                    Label(
+                        L10n.string("time_machine_recovery.action.reset"),
+                        systemImage: "arrow.clockwise.circle"
+                    )
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(state.isResetting)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.45))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var statusPresentation: (message: String, systemImage: String, color: Color)? {
+        switch state {
+        case .idle:
+            return nil
+        case .resetting:
+            return (
+                L10n.string("time_machine_recovery.status.resetting"),
+                "clock",
+                .secondary
+            )
+        case .succeeded:
+            return (
+                L10n.string("time_machine_recovery.status.succeeded"),
+                "checkmark.circle.fill",
+                .green
+            )
+        case .failed(let error):
+            return (
+                message(for: error),
+                "exclamationmark.triangle.fill",
+                .yellow
+            )
+        }
+    }
+
+    private func message(for error: TimeMachineConnectionRecoveryError) -> String {
+        switch error {
+        case .backupRunning:
+            return L10n.string("time_machine_recovery.error.backup_running")
+        case .statusUnavailable:
+            return L10n.string("time_machine_recovery.error.status_unavailable")
+        case .authorizationCancelled:
+            return L10n.string("time_machine_recovery.error.cancelled")
+        case .resetFailed(let detail):
+            let trimmed = detail.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? L10n.string("time_machine_recovery.error.failed")
+                : L10n.format("time_machine_recovery.error.failed_detail", trimmed)
+        }
     }
 }
 

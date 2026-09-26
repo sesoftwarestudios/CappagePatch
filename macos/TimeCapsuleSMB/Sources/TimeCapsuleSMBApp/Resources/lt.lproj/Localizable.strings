@@ -942,3 +942,17 @@
 "timeline.deploy.detail.upload_rsync" = "„rsync“ ir jo tarnybos konfigūracija kopijuojami į apkrovos tomą.";
 "timeline.deploy.title.upload_rsync" = "Įkelti rsync";
 "toggle.enable_rsync" = "Įjungti rsync";
+"time_machine_recovery.title" = "„Time Machine“ ryšio atkūrimas";
+"time_machine_recovery.description" = "Naudokite tik tada, jei po diegimo „macOS“ vis dar praneša, kad nepavyko sukurti atsarginės kopijos. Vietinės „Time Machine“ paslaugos paleidžiamos iš naujo, o atsarginių kopijų duomenys niekada nešalinami.";
+"time_machine_recovery.confirm.title" = "Atkurti „Time Machine“ ryšį?";
+"time_machine_recovery.confirm.message" = "Jei vyksta atsarginis kopijavimas, „CappagePatch“ veiksmą atmes, tada paprašys administratoriaus leidimo iš naujo paleisti vietines „Time Machine“ paslaugas. Duomenys nebus šalinami.";
+"time_machine_recovery.confirm.action" = "Atkurti ryšį";
+"time_machine_recovery.action.reset" = "Atkurti „Time Machine“ ryšį";
+"time_machine_recovery.action.resetting" = "Ryšys atkuriamas…";
+"time_machine_recovery.status.resetting" = "Iš naujo paleidžiamos vietinės „Time Machine“ paslaugos…";
+"time_machine_recovery.status.succeeded" = "Ryšys atkurtas. „Time Machine“ pasirinkite kurti atsarginę kopiją dabar.";
+"time_machine_recovery.error.backup_running" = "Vyksta „Time Machine“ atsarginis kopijavimas. Palaukite, kol jis baigsis, arba sustabdykite prieš atkurdami ryšį.";
+"time_machine_recovery.error.status_unavailable" = "„CappagePatch“ negalėjo saugiai nustatyti, ar „Time Machine“ neveikia, todėl niekas nepakeista.";
+"time_machine_recovery.error.cancelled" = "Administratoriaus leidimas atšauktas. Niekas nepakeista.";
+"time_machine_recovery.error.failed" = "Nepavyko atkurti „Time Machine“ ryšio. Niekas nebuvo pašalinta.";
+"time_machine_recovery.error.failed_detail" = "Nepavyko atkurti „Time Machine“ ryšio: %@";
